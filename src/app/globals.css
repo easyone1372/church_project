@@ -1,15 +1,80 @@
 @import "tailwindcss";
 
+@theme {
+  /* ┌─────────────────────────────────────────────┐
+     │                   Colors                    │
+     └─────────────────────────────────────────────┘ */
+  --color-brand: #2563eb; /* 메인 브랜드 컬러 - 버튼, 강조 텍스트, 아이콘 */
+  --color-brand-bg: #eff6ff; /* 브랜드 연한 배경 - Beta 배지 배경 */
+
+  --color-surface-page: #fbfcff; /* 페이지 전체 배경 */
+  --color-surface-card: #f8fbff; /* ResultCard 배경 */
+  --color-surface-notice: #f9fafb; /* 안내 박스 배경 */
+
+  --color-text-primary: #0f172a; /* Hero h1 - 가장 진한 텍스트 */
+  --color-text-heading: #111827; /* 섹션 h2 제목 */
+  --color-text-body: #1f2937; /* 일반 본문 */
+  --color-text-muted: #667085; /* 설명, 부제목 등 보조 텍스트 */
+  --color-text-placeholder: #a6adbb; /* input placeholder */
+
+  --color-border-base: #e6eaf0; /* 카드, SearchBox 테두리 */
+  --color-border-header: #eef1f5; /* Header 하단 구분선 */
+  --color-border-divider: #e5e7eb; /* AI 검색 | 세로 구분선 */
+  --color-border-card: #eef2f7; /* ResultCard 테두리 */
+
+  /* ┌─────────────────────────────────────────────┐
+     │                 Font Sizes                  │
+     └─────────────────────────────────────────────┘ */
+  --font-size-2xs: 13px; /* 네비 버튼, Badge → text-2xs */
+  --font-size-xs: 14px; /* 네비게이션 링크 → text-xs */
+  --font-size-sm: 15px; /* ResultCard 본문 → text-sm */
+  --font-size-md: 17px; /* ResultCard 제목 → text-md */
+  --font-size-lg: 22px; /* SearchBox input → text-lg */
+  --font-size-xl: 24px; /* 마이크 버튼 → text-xl */
+  --font-size-2xl: 25px; /* 로고, 결과 h2 → text-2xl */
+  --font-size-hero: 64px; /* Hero h1 → text-hero */
+
+  /* ┌─────────────────────────────────────────────┐
+     │               Letter Spacing                │
+     └─────────────────────────────────────────────┘ */
+  --tracking-tight3: -2.5px; /* Hero h1 → tracking-tight3 */
+  --tracking-tight1: -1px; /* 로고 → tracking-tight1 */
+  --tracking-tightsm: -0.5px; /* 결과 h2 → tracking-tightsm */
+  --tracking-wide5: 5px; /* 로고 서브텍스트 → tracking-wide5 */
+
+  /* ┌─────────────────────────────────────────────┐
+     │               Border Radius                 │
+     └─────────────────────────────────────────────┘ */
+  --radius-notice: 18px; /* 안내 박스 → rounded-notice */
+  --radius-card: 20px; /* ResultCard → rounded-card */
+  --radius-result: 28px; /* ResultBox → rounded-result */
+
+  /* ┌─────────────────────────────────────────────┐
+     │                Box Shadow                   │
+     └─────────────────────────────────────────────┘ */
+  --shadow-search: 0 18px 45px rgba(15, 23, 42, 0.08); /* SearchBox → shadow-search */
+  --shadow-result: 0 18px 45px rgba(15, 23, 42, 0.07); /* ResultBox → shadow-result */
+
+  /* ┌─────────────────────────────────────────────┐
+     │               기존 설정 유지                  │
+     └─────────────────────────────────────────────┘ */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* spacing, max-width는 @theme 밖에서 CSS 변수로 관리 */
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --max-w-hero: 1180px; /* Hero 컨테이너 → style={{ maxWidth: "var(--max-w-hero)" }} */
+  --max-w-search: 1160px; /* SearchBox */
+  --max-w-result: 920px; /* ResultBox */
+
+  --pt-hero: 170px; /* Hero 상단 패딩 */
+  --mb-hero-desc: 52px; /* 히어로 설명 하단 마진 */
+  --h-header: 86px; /* Header 높이 */
+  --h-searchbox: 64px; /* SearchBox 높이 */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,5 +87,69 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Pretendard", Arial, Helvetica, sans-serif;
+}
+
+@font-face {
+  font-family: "Pretendard";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Thin.woff2")
+    format("woff2");
+  font-weight: 100;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraLight.woff2")
+    format("woff2");
+  font-weight: 200;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Light.woff2")
+    format("woff2");
+  font-weight: 300;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Regular.woff2")
+    format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Medium.woff2")
+    format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-SemiBold.woff2")
+    format("woff2");
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Bold.woff2")
+    format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraBold.woff2")
+    format("woff2");
+  font-weight: 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Black.woff2")
+    format("woff2");
+  font-weight: 900;
+  font-display: swap;
 }

@@ -1,0 +1,124 @@
+export interface SearchResultItem {
+  id: number;
+  title: string;
+  category: string;
+  location: string;
+  timeAgo: string;
+  price: string;
+  imageEmoji: string;
+  tags: string[];
+  keywords: string[]; /* 검색어 매칭용 키워드 */
+}
+
+export const MOCK_RESULTS: SearchResultItem[] = [
+  {
+    id: 1,
+    title: "기타 입문자 대상 1:1 레슨 (강남 홍대 가능)",
+    category: "레슨",
+    location: "마포구",
+    timeAgo: "3분 전",
+    price: "월 120,000원",
+    imageEmoji: "🎸",
+    tags: ["lesson", "guitar"],
+    keywords: ["기타", "레슨", "입문", "어쿠스틱", "통기타"],
+  },
+  {
+    id: 2,
+    title: "드럼 레슨 합니다 - 10년 경력 프로 드러머",
+    category: "레슨",
+    location: "서대문구",
+    timeAgo: "1시간 전",
+    price: "월 150,000원",
+    imageEmoji: "🥁",
+    tags: ["lesson", "drum"],
+    keywords: ["드럼", "레슨", "드러머", "타악기"],
+  },
+  {
+    id: 3,
+    title: "보컬 트레이닝 · 발성 교정 전문",
+    category: "보컬/노래",
+    location: "용산구",
+    timeAgo: "2시간 전",
+    price: "월 100,000원",
+    imageEmoji: "🎤",
+    tags: ["vocal"],
+    keywords: ["보컬", "노래", "발성", "트레이닝", "보이스"],
+  },
+  {
+    id: 4,
+    title: "재즈 피아노 레슨 · 초중급 환영",
+    category: "피아노/건반",
+    location: "강남구",
+    timeAgo: "5시간 전",
+    price: "월 130,000원",
+    imageEmoji: "🎹",
+    tags: ["lesson", "piano"],
+    keywords: ["피아노", "건반", "재즈", "레슨"],
+  },
+  {
+    id: 5,
+    title: "밴드 합주 멤버 구합니다 (기타, 베이스)",
+    category: "밴드/합주",
+    location: "홍대",
+    timeAgo: "어제",
+    price: "무료",
+    imageEmoji: "🎵",
+    tags: ["band", "guitar"],
+    keywords: ["밴드", "합주", "기타", "베이스", "멤버"],
+  },
+  {
+    id: 6,
+    title: "Fender Stratocaster 중고 판매합니다",
+    category: "악기거래",
+    location: "성동구",
+    timeAgo: "2일 전",
+    price: "850,000원",
+    imageEmoji: "🎸",
+    tags: ["instrument", "guitar"],
+    keywords: ["기타", "펜더", "스트라토캐스터", "일렉기타", "중고"],
+  },
+  {
+    id: 7,
+    title: "Roland 전자드럼 TD-17KVX 팝니다",
+    category: "악기거래",
+    location: "송파구",
+    timeAgo: "3일 전",
+    price: "1,200,000원",
+    imageEmoji: "🥁",
+    tags: ["instrument", "drum"],
+    keywords: ["드럼", "전자드럼", "롤랜드", "중고"],
+  },
+  {
+    id: 8,
+    title: "색소폰 레슨 · 왕초보 환영 · 단기완성",
+    category: "관악기",
+    location: "중구",
+    timeAgo: "4일 전",
+    price: "월 90,000원",
+    imageEmoji: "🎷",
+    tags: ["lesson", "wind"],
+    keywords: ["색소폰", "관악기", "레슨", "초보"],
+  },
+  {
+    id: 9,
+    title: "DJ 장비 Pioneer DDJ-400 판매",
+    category: "DJ/전자음악",
+    location: "마포구",
+    timeAgo: "5일 전",
+    price: "450,000원",
+    imageEmoji: "🎧",
+    tags: ["dj", "equipment"],
+    keywords: ["DJ", "파이오니아", "전자음악", "장비"],
+  },
+  {
+    id: 10,
+    title: "바이올린 레슨 · 어린이 성인 모두 가능",
+    category: "현악기",
+    location: "노원구",
+    timeAgo: "6일 전",
+    price: "월 110,000원",
+    imageEmoji: "🎻",
+    tags: ["lesson", "string"],
+    keywords: ["바이올린", "현악기", "레슨", "어린이"],
+  },
+];
