@@ -1,16 +1,16 @@
-interface ButtonProps {
+interface RpButtonProps {
   onClick?: () => void;
   children: React.ReactNode;
   variant?: "primary" | "round";
   className?: string;
 }
 
-export default function Button({
+export default function RpButton({
   onClick,
   children,
   variant = "primary",
   className = "",
-}: ButtonProps) {
+}: RpButtonProps) {
   const base =
     "cursor-pointer transition-opacity hover:opacity-80 font-medium border-none";
 

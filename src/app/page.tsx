@@ -1,20 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Header from "@/components/organisms/Header";
 import TitleSection from "@/components/organisms/TitleSection";
 import SearchResultPage from "@/components/organisms/SearchResultPage";
 
-export default function HomePage() {
-  const [submittedQuery, setSubmittedQuery] = useState("");
+function HomePageContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const query = searchParams.get("q") ?? "";
 
-  const handleLogoClick = () => setSubmittedQuery("");
+  const handleSearch = (q: string) => {
+    if (q.trim()) router.push(`/?q=${encodeURIComponent(q.trim())}`);
+  };
 
-  if (submittedQuery) {
+  const handleLogoClick = () => router.push("/");
+
+  if (query) {
     return (
       <SearchResultPage
-        initialQuery={submittedQuery}
-        onBack={setSubmittedQuery}
+        initialQuery={query}
+        onBack={handleSearch}
         onLogoClick={handleLogoClick}
       />
     );
@@ -23,7 +30,15 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-surface-page text-text-body">
       <Header onLogoClick={handleLogoClick} />
-      <TitleSection onSearch={setSubmittedQuery} />
+      <TitleSection onSearch={handleSearch} />
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense>
+      <HomePageContent />
+    </Suspense>
   );
 }

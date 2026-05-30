@@ -12,6 +12,7 @@ export interface SearchResultItem {
   imageUrl?: string;
   tags: string[];
   keywords: string[]; /* 검색어 매칭용 키워드 */
+  description?: string; /* 기타 사항 */
 }
 
 export const MOCK_RESULTS: SearchResultItem[] = [
@@ -26,6 +27,7 @@ export const MOCK_RESULTS: SearchResultItem[] = [
     imageEmoji: "🎸",
     tags: ["lesson", "guitar"],
     keywords: ["기타", "레슨", "입문", "어쿠스틱", "통기타"],
+    description: "통기타 입문부터 코드 스트로크, 핑거스타일까지 단계별로 가르쳐 드립니다. 악기가 없으셔도 레슨실에 기타가 구비되어 있어요. 주 1~2회 수업 가능하며 시간 협의 환영합니다.",
   },
   {
     id: 2,
@@ -38,6 +40,7 @@ export const MOCK_RESULTS: SearchResultItem[] = [
     imageEmoji: "🥁",
     tags: ["lesson", "drum"],
     keywords: ["드럼", "레슨", "드러머", "타악기"],
+    description: "실용음악과 출신 10년 경력 드러머가 직접 지도합니다. 팝, 록, 재즈 등 장르별 드럼 패턴 교육. 방음이 잘 된 개인 연습실에서 진행하며, 초보자도 3개월이면 밴드 합주 가능 수준까지 올려 드립니다.",
   },
   {
     id: 3,

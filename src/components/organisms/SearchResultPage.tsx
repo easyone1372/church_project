@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/organisms/Header";
 import CategoryFilter from "@/components/molecules/CategoryFilter";
 import ResultItem from "@/components/atom/ResultItem";
@@ -19,6 +20,7 @@ export default function SearchResultPage({
   onBack,
   onLogoClick,
 }: SearchResultPageProps) {
+  const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
   const [selectedCategory, setSelectedCategory] = useState("all");
 
@@ -49,7 +51,7 @@ export default function SearchResultPage({
           <SearchBar
             value={query}
             onChange={setQuery}
-            onSearch={() => onBack(query)}
+            onSearch={() => { if (query.trim()) onBack(query); }}
           />
         </div>
       </div>
@@ -96,6 +98,7 @@ export default function SearchResultPage({
                   price={item.price}
                   imageEmoji={item.imageEmoji}
                   imageUrl={item.imageUrl}
+                  onClick={() => router.push(`/post/${item.id}`)}
                 />
               ))}
             </div>

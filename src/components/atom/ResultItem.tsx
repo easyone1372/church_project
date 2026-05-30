@@ -6,6 +6,7 @@ interface ResultItemProps {
   price: string;
   imageEmoji: string;
   imageUrl?: string;
+  onClick?: () => void;
 }
 
 export default function ResultItem({
@@ -16,11 +17,12 @@ export default function ResultItem({
   price,
   imageEmoji,
   imageUrl,
+  onClick,
 }: ResultItemProps) {
   return (
-    <div className="flex gap-4 p-4 rounded-2xl hover:bg-surface-card transition-colors cursor-pointer border border-transparent hover:border-border-card group">
+    <div onClick={onClick} className="flex gap-4 p-4 rounded-2xl hover:bg-surface-card transition-colors cursor-pointer border border-transparent hover:border-border-card group">
       {/* 썸네일 */}
-      <div className="w-[120px] h-[120px] shrink-0 rounded-xl bg-[#f1f5f9] flex items-center justify-center text-5xl overflow-hidden">
+      <div className="w-30 h-30 shrink-0 rounded-xl bg-[#f1f5f9] flex items-center justify-center text-5xl overflow-hidden">
         {imageUrl ? (
           <img
             src={imageUrl}

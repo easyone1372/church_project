@@ -1,6 +1,6 @@
 import Logo from "@/components/atom/Logo";
 import NavLink from "@/components/atom/NavLink";
-import Button from "@/components/atom/Button";
+import RpButton from "@/components/atom/RpButton";
 
 const NAV_LINKS = [
   { href: "/musicmap", label: "음악맵" },
@@ -26,7 +26,7 @@ export default function Header({ onLogoClick }: HeaderProps) {
             {link.label}
           </NavLink>
         ))}
-        <Button variant="primary">시작하기</Button>
+        <RpButton variant="primary">시작하기</RpButton>
       </nav>
     </header>
   );

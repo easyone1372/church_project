@@ -41,3 +41,11 @@ export const CATEGORY_TAG_MAP: Record<string, string[]> = {
 export const CATEGORY_LOCATION: Record<string, string[]> = {
   all: [],
 };
+
+export interface WriteCategory extends Category {
+  tags: string[];
+}
+
+export const WRITE_CATEGORIES: WriteCategory[] = CATEGORIES.filter(
+  (c) => !["all", "record", "etc"].includes(c.id),
+).map((c) => ({ ...c, tags: CATEGORY_TAG_MAP[c.id] ?? [c.id] }));

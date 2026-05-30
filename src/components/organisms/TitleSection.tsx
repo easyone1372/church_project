@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import SearchBar from "@/components/molecules/SearchBar";
+import anim from "@/styles/animations.module.css";
 
 interface TitleSectionProps {
   onSearch: (query: string) => void;
@@ -24,11 +25,12 @@ export default function TitleSection({ onSearch }: TitleSectionProps) {
       }}
     >
       <h1
-        className="m-0 font-bold leading-snug"
+        className={`m-0 font-bold leading-snug ${anim.fadeUp}`}
         style={{
           fontSize: "64px",
           letterSpacing: "-2.5px",
           color: "var(--color-text-primary)",
+          animationDelay: "80ms",
         }}
       >
         음악을 더 쉽게{" "}
@@ -38,10 +40,11 @@ export default function TitleSection({ onSearch }: TitleSectionProps) {
       </h1>
 
       <p
-        className="mt-6 text-[22px]"
+        className={`mt-6 text-[22px] ${anim.fadeUp}`}
         style={{
           marginBottom: "var(--mb-hero-desc)",
           color: "var(--color-text-muted)",
+          animationDelay: "200ms",
         }}
       >
         AI가 음악 레슨, 악기, 선생님, 모임, 중고거래까지 빠르게 찾아드려요.

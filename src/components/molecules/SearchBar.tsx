@@ -1,4 +1,30 @@
-import Button from "@/components/atom/Button";
+import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
+import RpButton from "@/components/atom/RpButton";
+import micIcon from "@/styles/mic_icon.png";
+
+interface ISpeechRecognition extends EventTarget {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((e: ISpeechRecognitionEvent) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
+interface ISpeechRecognitionEvent {
+  results: { 0: { transcript: string } }[];
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: new () => ISpeechRecognition;
+    webkitSpeechRecognition: new () => ISpeechRecognition;
+  }
+}
 
 interface SearchBarProps {
   value: string;
@@ -6,11 +32,49 @@ interface SearchBarProps {
   onSearch: () => void;
 }
 
-export default function SearchBar({
-  value,
-  onChange,
-  onSearch,
-}: SearchBarProps) {
+export default function SearchBar({ value, onChange, onSearch }: SearchBarProps) {
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<ISpeechRecognition | null>(null);
+
+  useEffect(() => {
+    const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    if (!SR) return;
+
+    const rec = new SR();
+    rec.lang = "ko-KR";
+    rec.continuous = false;
+    rec.interimResults = false;
+
+    rec.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      onChange(transcript);
+      setIsListening(false);
+    };
+    rec.onerror = () => setIsListening(false);
+    rec.onend = () => setIsListening(false);
+
+    recognitionRef.current = rec;
+
+    return () => {
+      rec.abort();
+    };
+  }, [onChange]);
+
+  const handleMicClick = () => {
+    const rec = recognitionRef.current;
+    if (!rec) {
+      alert("이 브라우저는 음성 입력을 지원하지 않아요.");
+      return;
+    }
+    if (isListening) {
+      rec.stop();
+      setIsListening(false);
+    } else {
+      rec.start();
+      setIsListening(true);
+    }
+  };
+
   return (
     <div
       className="w-full mx-auto h-16 px-5 bg-white border border-border-base rounded-full shadow-search flex items-center gap-3"
@@ -25,15 +89,21 @@ export default function SearchBar({
         onKeyDown={(e) => {
           if (e.key === "Enter") onSearch();
         }}
-        placeholder="AI에게 원하는 음악 서비스나 레슨을 물어보세요"
+        placeholder={isListening ? "듣는 중..." : "AI에게 원하는 음악 서비스나 레슨을 물어보세요"}
         className="flex-1 border-none outline-none text-base text-text-body bg-transparent placeholder-text-placeholder"
       />
-      <button className="border-none bg-transparent text-lg cursor-pointer">
-        🎙️
+      <button
+        onClick={handleMicClick}
+        title={isListening ? "음성 입력 중지" : "음성으로 검색"}
+        className={`border-none bg-transparent cursor-pointer transition-all flex items-center justify-center ${
+          isListening ? "animate-pulse scale-110 opacity-50" : "opacity-30 hover:opacity-70"
+        }`}
+      >
+        <Image src={micIcon} alt="음성 검색" width={18} height={18} />
       </button>
-      <Button variant="round" onClick={onSearch}>
+      <RpButton variant="round" onClick={onSearch}>
         →
-      </Button>
+      </RpButton>
     </div>
   );
 }
