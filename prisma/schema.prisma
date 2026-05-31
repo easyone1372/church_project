@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ── 사용자 ──────────────────────────────────────────────────────────────
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  name      String   @db.VarChar(50)
+  phone     String?  @db.VarChar(20)
+  avatarUrl String?  @db.VarChar(500)
+  bio       String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  posts            Post[]
+  comments         Comment[]
+  likes            Like[]
+  bookmarks        Bookmark[]
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+}
+
+// ── 카테고리 ─────────────────────────────────────────────────────────────
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  slug  String @unique @db.VarChar(50) // "lesson", "guitar"
+  name  String @db.VarChar(50)         // "레슨", "기타/베이스"
+
+  postCategories PostCategory[]
+}
+
+// ── 게시글 ────────────────────────────────────────────────────────────────
+
+enum PriceType {
+  FREE        // 무료
+  MONTHLY     // 월정액
+  PER_SESSION // 회당
+  FIXED       // 정가 (중고거래 등)
+  NEGOTIABLE  // 협의
+}
+
+enum PostStatus {
+  PUBLISHED
+  HIDDEN
+  DELETED
+}
+
+model Post {
+  id           Int        @id @default(autoincrement())
+  title        String     @db.VarChar(100)
+  description  String?    @db.Text
+  priceType    PriceType  @default(NEGOTIABLE)
+  priceAmount  Int?       // 원 단위 숫자 (무료/협의면 null)
+  priceDisplay String     @db.VarChar(100) // 표시용 "월 120,000원"
+  imageEmoji   String     @db.VarChar(10)
+  location     String     @db.VarChar(100) // 표시용 "마포구"
+  lat          Float?
+  lng          Float?
+  status       PostStatus @default(PUBLISHED)
+  viewCount    Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  authorId Int
+  author   User @relation(fields: [authorId], references: [id])
+
+  categories    PostCategory[]
+  images        PostImage[]
+  locationTags  PostLocationTag[]
+  keywords      PostKeyword[]
+  comments      Comment[]
+  likes         Like[]
+  bookmarks     Bookmark[]
+  messages      Message[]
+}
+
+// ── 게시글 ↔ 카테고리 (N:M) ──────────────────────────────────────────────
+
+model PostCategory {
+  postId     Int
+  categoryId Int
+
+  post     Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@id([postId, categoryId])
+}
+
+// ── 게시글 이미지 ─────────────────────────────────────────────────────────
+
+model PostImage {
+  id     Int    @id @default(autoincrement())
+  postId Int
+  url    String @db.VarChar(500)
+  order  Int    @default(0)
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+// ── 게시글 지역 태그 (검색용) ──────────────────────────────────────────────
+
+model PostLocationTag {
+  id     Int    @id @default(autoincrement())
+  postId Int
+  tag    String @db.VarChar(50) // "마포", "홍대", "서울"
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([tag])
+}
+
+// ── 게시글 검색 키워드 ────────────────────────────────────────────────────
+
+model PostKeyword {
+  id      Int    @id @default(autoincrement())
+  postId  Int
+  keyword String @db.VarChar(50)
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([keyword])
+}
+
+// ── 댓글 ──────────────────────────────────────────────────────────────────
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  postId   Int
+  authorId Int
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id])
+}
+
+// ── 좋아요 ────────────────────────────────────────────────────────────────
+
+model Like {
+  createdAt DateTime @default(now())
+
+  userId Int
+  postId Int
+
+  user User @relation(fields: [userId], references: [id])
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+}
+
+// ── 북마크 ────────────────────────────────────────────────────────────────
+
+model Bookmark {
+  createdAt DateTime @default(now())
+
+  userId Int
+  postId Int
+
+  user User @relation(fields: [userId], references: [id])
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+}
+
+// ── 메시지 ────────────────────────────────────────────────────────────────
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  senderId   Int
+  receiverId Int
+  postId     Int? // 어떤 글에 대한 문의인지 (선택)
+
+  sender   User  @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User  @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  post     Post? @relation(fields: [postId], references: [id])
+}

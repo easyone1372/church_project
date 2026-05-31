@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"require\\('dotenv/config'\\); const u = new URL\\(process.env.DATABASE_URL\\); console.log\\({host: u.hostname, port: u.port, user: u.username, pass: u.password, db: u.pathname.slice\\(1\\)}\\)\")"
+    ]
+  }
+}

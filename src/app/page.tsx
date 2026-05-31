@@ -20,6 +20,7 @@ function HomePageContent() {
   if (query) {
     return (
       <SearchResultPage
+        key={query}
         initialQuery={query}
         onBack={handleSearch}
         onLogoClick={handleLogoClick}

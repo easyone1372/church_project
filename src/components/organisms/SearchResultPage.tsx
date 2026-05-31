@@ -7,7 +7,8 @@ import CategoryFilter from "@/components/molecules/CategoryFilter";
 import ResultItem from "@/components/atom/ResultItem";
 import SearchBar from "@/components/molecules/SearchBar";
 import { MOCK_RESULTS } from "@/data/sampleMockResults";
-import { CATEGORY_TAG_MAP } from "@/data/Categories";
+import { CATEGORY_TAG_MAP, inferCategoriesFromTokens } from "@/data/Categories";
+import { extractKeywords } from "@/lib/mapUtils";
 
 interface SearchResultPageProps {
   initialQuery: string;
@@ -22,20 +23,40 @@ export default function SearchResultPage({
 }: SearchResultPageProps) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(() => {
+    const tokens = extractKeywords(initialQuery.trim().toLowerCase());
+    return inferCategoriesFromTokens(tokens);
+  });
+
+  const toggleCategory = (id: string) => {
+    if (id === "all") { setSelectedCategories(new Set()); return; }
+    setSelectedCategories((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
 
   const filtered = MOCK_RESULTS.filter((item) => {
     const q = initialQuery.trim().toLowerCase();
-    const matchesQuery =
-      q === "" ||
-      item.title.toLowerCase().includes(q) ||
-      item.category.toLowerCase().includes(q) ||
-      item.keywords.some((kw) => kw.toLowerCase().includes(q));
+
+    let matchesQuery: boolean;
+    if (q === "") {
+      matchesQuery = true;
+    } else {
+      const tokens = extractKeywords(q);
+      const matchToken = (token: string) =>
+        item.title.toLowerCase().includes(token) ||
+        item.category.toLowerCase().includes(token) ||
+        item.keywords.some((kw) => kw.toLowerCase().includes(token)) ||
+        item.locationTags.some((lt) => lt.toLowerCase().includes(token));
+      matchesQuery = tokens.length > 0 ? tokens.every(matchToken) : matchToken(q);
+    }
 
     const matchesCategory =
-      selectedCategory === "all" ||
-      (CATEGORY_TAG_MAP[selectedCategory] ?? []).some((tag) =>
-        item.tags.includes(tag),
+      selectedCategories.size === 0 ||
+      [...selectedCategories].some((catId) =>
+        (CATEGORY_TAG_MAP[catId] ?? []).some((tag) => item.tags.includes(tag)),
       );
 
     return matchesQuery && matchesCategory;
@@ -73,8 +94,8 @@ export default function SearchResultPage({
       >
         <aside className="w-44 shrink-0 pt-2">
           <CategoryFilter
-            selected={selectedCategory}
-            onChange={setSelectedCategory}
+            selected={selectedCategories}
+            onToggle={toggleCategory}
           />
         </aside>
 

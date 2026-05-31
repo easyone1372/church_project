@@ -42,6 +42,19 @@ export const CATEGORY_LOCATION: Record<string, string[]> = {
   all: [],
 };
 
+export function inferCategoriesFromTokens(tokens: string[]): Set<string> {
+  const matched = new Set<string>();
+  const candidates = CATEGORIES.filter((c) => !["all", "etc"].includes(c.id));
+  for (const token of tokens) {
+    for (const cat of candidates) {
+      if (cat.label.toLowerCase().includes(token.toLowerCase())) {
+        matched.add(cat.id);
+      }
+    }
+  }
+  return matched;
+}
+
 export interface WriteCategory extends Category {
   tags: string[];
 }
