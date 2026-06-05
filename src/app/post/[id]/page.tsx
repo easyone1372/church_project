@@ -1,10 +1,19 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { MOCK_RESULTS } from "@/data/sampleMockResults";
 import Header from "@/components/organisms/Header";
+import InfoRow from "@/components/atom/InfoRow";
+
+interface CommentData {
+  id: number;
+  content: string;
+  guestName: string | null;
+  createdAt: string;
+  author: { name: string } | null;
+}
 
 export default function PostDetailPage({
   params,
@@ -14,6 +23,41 @@ export default function PostDetailPage({
   const { id } = use(params);
   const router = useRouter();
   const item = MOCK_RESULTS.find((r) => r.id === Number(id));
+
+  const [comments, setComments] = useState<CommentData[]>([]);
+  const [commentName, setCommentName] = useState("");
+  const [commentText, setCommentText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/posts/${id}/comments`)
+      .then((r) => r.json())
+      .then((data) => Array.isArray(data) && setComments(data))
+      .catch(() => {});
+  }, [id]);
+
+  const handleCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentText.trim() || submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/posts/${id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: commentText.trim(),
+          guestName: commentName.trim() || "익명",
+        }),
+      });
+      if (res.ok) {
+        const created: CommentData = await res.json();
+        setComments((prev) => [...prev, created]);
+        setCommentText("");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (!item) {
     return (
@@ -48,6 +92,7 @@ export default function PostDetailPage({
           ← 목록으로
         </button>
 
+        {/* 게시글 카드 */}
         <div className="bg-white rounded-2xl border border-border-card overflow-hidden">
           {/* 대표 이미지 */}
           <div className="w-full h-56 bg-[#f1f5f9] flex items-center justify-center text-8xl overflow-hidden">
@@ -74,7 +119,6 @@ export default function PostDetailPage({
               </h1>
             </div>
 
-            {/* 구분선 */}
             <hr className="border-border-base" />
 
             {/* 기본 정보 */}
@@ -82,6 +126,7 @@ export default function PostDetailPage({
               <InfoRow label="가격" value={item.price} highlight />
               <InfoRow label="지역" value={item.location} />
               <InfoRow label="등록일" value={item.timeAgo} />
+              {item.author && <InfoRow label="작성자" value={item.author} />}
             </div>
 
             {/* 기타 사항 */}
@@ -97,7 +142,7 @@ export default function PostDetailPage({
               </>
             )}
 
-            {/* 태그 */}
+            {/* 해시태그 */}
             {item.keywords.length > 0 && (
               <>
                 <hr className="border-border-base" />
@@ -116,34 +161,76 @@ export default function PostDetailPage({
             )}
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
 
-function InfoRow({
-  label,
-  value,
-  highlight,
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div className="flex items-baseline gap-3">
-      <span className="text-[12px] font-semibold text-text-muted w-12 shrink-0">
-        {label}
-      </span>
-      <span
-        className={
-          highlight
-            ? "text-[20px] font-bold text-text-heading"
-            : "text-[14px] text-text-body"
-        }
-      >
-        {value}
-      </span>
+        {/* 댓글 섹션 */}
+        <div className="mt-6 bg-white rounded-2xl border border-border-card px-8 py-7 flex flex-col gap-6">
+          <h2 className="text-[15px] font-bold text-text-heading">
+            댓글 {comments.length > 0 && <span className="text-brand">{comments.length}</span>}
+          </h2>
+
+          {/* 댓글 목록 */}
+          {comments.length === 0 ? (
+            <p className="text-[13px] text-text-muted py-4 text-center">
+              첫 번째 댓글을 남겨보세요.
+            </p>
+          ) : (
+            <ul className="flex flex-col divide-y divide-border-base">
+              {comments.map((c) => (
+                <li key={c.id} className="py-4 flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[13px] font-semibold text-text-heading">
+                      {c.author?.name ?? c.guestName ?? "익명"}
+                    </span>
+                    <span className="text-[11px] text-text-muted">
+                      {new Date(c.createdAt).toLocaleDateString("ko-KR", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                  <p className="text-[13px] text-text-body leading-relaxed">
+                    {c.content}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* 댓글 작성 폼 */}
+          <form onSubmit={handleCommentSubmit} className="flex flex-col gap-3 border-t border-border-base pt-5">
+            <input
+              type="text"
+              value={commentName}
+              onChange={(e) => setCommentName(e.target.value)}
+              placeholder="닉네임 (선택, 기본: 익명)"
+              maxLength={20}
+              className="w-40 h-9 px-3 rounded-lg border border-border-base text-[13px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors"
+            />
+            <div className="flex gap-3 items-end">
+              <textarea
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="댓글을 입력하세요."
+                maxLength={500}
+                rows={3}
+                className="flex-1 px-3 py-2 rounded-lg border border-border-base text-[13px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors resize-none"
+              />
+              <button
+                type="submit"
+                disabled={!commentText.trim() || submitting}
+                className="h-10 px-5 rounded-xl bg-brand text-white text-[13px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              >
+                등록
+              </button>
+            </div>
+            <p className="text-right text-[11px] text-text-placeholder">
+              {commentText.length}/500
+            </p>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

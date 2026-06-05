@@ -5,12 +5,18 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/organisms/Header";
 import { MOCK_RESULTS, SearchResultItem } from "@/data/sampleMockResults";
 import { DUMMY_COORDS } from "@/data/MapdummyCoords";
-import { CATEGORIES } from "@/data/Categories";
+import { CATEGORIES, CATEGORY_TAG_MAP } from "@/data/Categories";
 import { REGION_CENTERS } from "@/data/mapConstants";
-import { buildClusters, coordsFromLocation, extractKeywords, CoordsMap } from "@/lib/mapUtils";
+import {
+  buildClusters,
+  coordsFromLocation,
+  extractKeywords,
+  CoordsMap,
+} from "@/lib/mapUtils";
 import MapPanel from "@/components/organisms/MapPanel";
 import MapSearchBar from "@/components/molecules/MapSearchBar";
 import WritePostModal from "@/components/organisms/WritePostModal";
+import FilterChip from "@/components/atom/FilterChip";
 
 declare global {
   interface Window {
@@ -29,9 +35,13 @@ export default function MusicMapPage() {
   const [customPosts, setCustomPosts] = useState<SearchResultItem[]>([]);
   const [writeModalOpen, setWriteModalOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
-  const [filteredItems, setFilteredItems] = useState<SearchResultItem[]>(MOCK_RESULTS);
+  const [filteredItems, setFilteredItems] =
+    useState<SearchResultItem[]>(MOCK_RESULTS);
   const [panelOpen, setPanelOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<SearchResultItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<SearchResultItem | null>(
+    null,
+  );
+  const [chipFilter, setChipFilter] = useState("all");
 
   const filteredItemsRef = useRef<SearchResultItem[]>(MOCK_RESULTS);
   filteredItemsRef.current = filteredItems;
@@ -63,13 +73,19 @@ export default function MusicMapPage() {
     clusters.forEach((cluster) => {
       const isCluster = cluster.items.length > 1;
       const content = isCluster
-        ? `<div style="background:#8DC53E;color:#fff;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;box-shadow:0 2px 10px rgba(0,0,0,0.25);border:3px solid #fff;cursor:pointer;">${cluster.items.length}</div>`
-        : `<div style="background:#8DC53E;color:#fff;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.2);cursor:pointer;border:2px solid #fff;">${cluster.items[0].imageEmoji} ${cluster.items[0].price}</div>`;
+        ? `<div style="background:#8F4BC6;color:#fff;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;box-shadow:0 2px 10px rgba(0,0,0,0.25);border:3px solid #fff;cursor:pointer;">${cluster.items.length}</div>`
+        : `<div style="background:#8F4BC6;color:#fff;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.2);cursor:pointer;border:2px solid #fff;">${cluster.items[0].imageEmoji} ${cluster.items[0].price}</div>`;
 
       const marker = new window.naver.maps.Marker({
         position: new window.naver.maps.LatLng(cluster.lat, cluster.lng),
         map,
-        icon: { content, anchor: new window.naver.maps.Point(isCluster ? 22 : 0, isCluster ? 22 : 0) },
+        icon: {
+          content,
+          anchor: new window.naver.maps.Point(
+            isCluster ? 22 : 0,
+            isCluster ? 22 : 0,
+          ),
+        },
       });
 
       window.naver.maps.Event.addListener(marker, "click", () => {
@@ -89,7 +105,10 @@ export default function MusicMapPage() {
   /* ── 지도 초기화 ── */
   const initMap = useCallback(() => {
     if (!mapRef.current || mapObjRef.current) return;
-    if (!window.naver?.maps?.Map) { setTimeout(initMap, 100); return; }
+    if (!window.naver?.maps?.Map) {
+      setTimeout(initMap, 100);
+      return;
+    }
 
     const map = new window.naver.maps.Map(mapRef.current, {
       center: new window.naver.maps.LatLng(37.5563, 126.9236),
@@ -158,26 +177,59 @@ export default function MusicMapPage() {
       }
     };
 
+    if (item.lat && item.lng) {
+      addToMap(item.lat, item.lng);
+      return;
+    }
+
     if (window.naver?.maps?.Service) {
-      window.naver.maps.Service.geocode({ query: item.location }, (status: any, response: any) => {
-        if (status === window.naver.maps.Service.Status.OK && response.v2.addresses.length > 0) {
-          const { x, y } = response.v2.addresses[0];
-          addToMap(parseFloat(y), parseFloat(x));
-        } else {
-          const approx = coordsFromLocation(item.location, id);
-          addToMap(approx.lat, approx.lng);
-        }
-      });
+      window.naver.maps.Service.geocode(
+        { query: item.location },
+        (status: any, response: any) => {
+          if (
+            status === window.naver.maps.Service.Status.OK &&
+            response.v2.addresses.length > 0
+          ) {
+            const { x, y } = response.v2.addresses[0];
+            addToMap(parseFloat(y), parseFloat(x));
+          } else {
+            const approx = coordsFromLocation(item.location, id);
+            addToMap(approx.lat, approx.lng);
+          }
+        },
+      );
     } else {
       const approx = coordsFromLocation(item.location, id);
       addToMap(approx.lat, approx.lng);
     }
   };
 
+  /* ── 칩 필터 적용 헬퍼 ── */
+  const applyChipFilter = (items: SearchResultItem[], chip: string) =>
+    chip === "all"
+      ? items
+      : items.filter((item) =>
+          (CATEGORY_TAG_MAP[chip] ?? []).some((tag) => item.tags.includes(tag)),
+        );
+
+  /* ── 칩 필터 변경 ── */
+  const handleChipFilter = (categoryId: string) => {
+    setChipFilter(categoryId);
+    const allItems = [...MOCK_RESULTS, ...customPosts];
+    const result = applyChipFilter(allItems, categoryId);
+    setFilteredItems(result);
+    filteredItemsRef.current = result;
+    setSelectedItem(null);
+    if (mapObjRef.current) renderMarkers(result, mapObjRef.current);
+  };
+
   /* ── 검색 ── */
   const handleSearch = () => {
     const q = searchInput.trim().toLowerCase();
-    const allItems = [...MOCK_RESULTS, ...customPosts];
+    const allItems = applyChipFilter(
+      [...MOCK_RESULTS, ...customPosts],
+      chipFilter,
+    );
     const tokens = extractKeywords(q);
 
     const matchesToken = (item: SearchResultItem, token: string) =>
@@ -208,20 +260,31 @@ export default function MusicMapPage() {
     }
 
     if (window.naver?.maps?.Service) {
-      window.naver.maps.Service.geocode({ query: searchInput.trim() }, (status: any, response: any) => {
-        if (status === window.naver.maps.Service.Status.OK && response.v2.addresses.length > 0) {
-          const { x, y } = response.v2.addresses[0];
-          mapObjRef.current?.setCenter(new window.naver.maps.LatLng(parseFloat(y), parseFloat(x)));
-          mapObjRef.current?.setZoom(14);
-        }
-      });
+      window.naver.maps.Service.geocode(
+        { query: searchInput.trim() },
+        (status: any, response: any) => {
+          if (
+            status === window.naver.maps.Service.Status.OK &&
+            response.v2.addresses.length > 0
+          ) {
+            const { x, y } = response.v2.addresses[0];
+            mapObjRef.current?.setCenter(
+              new window.naver.maps.LatLng(parseFloat(y), parseFloat(x)),
+            );
+            mapObjRef.current?.setZoom(14);
+          }
+        },
+      );
     } else {
       renderMarkers(result, mapObjRef.current);
     }
   };
 
   const handleClear = () => {
-    const allItems = [...MOCK_RESULTS, ...customPosts];
+    const allItems = applyChipFilter(
+      [...MOCK_RESULTS, ...customPosts],
+      chipFilter,
+    );
     setSearchInput("");
     setFilteredItems(allItems);
     filteredItemsRef.current = allItems;
@@ -234,7 +297,9 @@ export default function MusicMapPage() {
     setSelectedItem(item);
     const coords = coordsRef.current[item.id];
     if (coords && mapObjRef.current) {
-      mapObjRef.current.panTo(new window.naver.maps.LatLng(coords.lat, coords.lng));
+      mapObjRef.current.panTo(
+        new window.naver.maps.LatLng(coords.lat, coords.lng),
+      );
     }
   };
 
@@ -251,6 +316,46 @@ export default function MusicMapPage() {
           onClear={handleClear}
         />
 
+        {/* 카테고리 필터 칩 바 */}
+        <div
+          className="absolute z-10 left-4 flex gap-1.5"
+          style={{ top: "72px" }}
+        >
+          {[
+            { id: "all",        label: "전체" },
+            { id: "lesson",     label: "레슨" },
+            { id: "band",       label: "밴드/합주" },
+            { id: "instrument", label: "악기거래" },
+          ].map(({ id, label }) => (
+            <FilterChip key={id} active={chipFilter === id} onClick={() => handleChipFilter(id)}>
+              {label}
+            </FilterChip>
+          ))}
+        </div>
+
+        {/* 내 위치로 이동 */}
+        <button
+          onClick={() => {
+            if (!navigator.geolocation || !mapObjRef.current) return;
+            navigator.geolocation.getCurrentPosition(
+              ({ coords: { latitude: lat, longitude: lng } }) => {
+                mapObjRef.current.panTo(new window.naver.maps.LatLng(lat, lng));
+                mapObjRef.current.setZoom(15);
+              },
+              () => alert("위치 정보를 가져올 수 없어요."),
+              { timeout: 5000 },
+            );
+          }}
+          title="내 위치로 이동"
+          className="absolute bottom-20 right-6 z-10 w-11 h-11 rounded-full bg-white text-text-body flex items-center justify-center border-none cursor-pointer hover:bg-surface-card transition-colors shadow-search"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+            <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z" strokeOpacity="0.2" />
+          </svg>
+        </button>
+
         <button
           onClick={() => setWriteModalOpen(true)}
           className="absolute bottom-6 right-6 z-10 flex items-center gap-2 bg-brand text-white text-xs font-semibold px-4 rounded-full border-none cursor-pointer hover:opacity-85 transition-opacity shadow-search"
@@ -265,7 +370,10 @@ export default function MusicMapPage() {
           selectedItem={selectedItem}
           onItemClick={handleItemClick}
           onBackToList={() => setSelectedItem(null)}
-          onClose={() => { setPanelOpen(false); setSelectedItem(null); }}
+          onClose={() => {
+            setPanelOpen(false);
+            setSelectedItem(null);
+          }}
           onDetailClick={(item) => router.push(`/post/${item.id}`)}
         />
       </div>

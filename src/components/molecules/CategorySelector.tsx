@@ -7,7 +7,10 @@ interface CategorySelectorProps {
   onToggle: (id: string) => void;
 }
 
-export default function CategorySelector({ selected, onToggle }: CategorySelectorProps) {
+export default function CategorySelector({
+  selected,
+  onToggle,
+}: CategorySelectorProps) {
   return (
     <div className="flex flex-wrap gap-2">
       {WRITE_CATEGORIES.map((c) => (

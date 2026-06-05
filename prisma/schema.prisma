@@ -14,6 +14,7 @@ model User {
   email     String   @unique @db.VarChar(255)
   password  String   @db.VarChar(255)
   name      String   @db.VarChar(50)
+  nickname  String?  @db.VarChar(50)
   phone     String?  @db.VarChar(20)
   avatarUrl String?  @db.VarChar(500)
   bio       String?  @db.Text
@@ -38,13 +39,32 @@ model Category {
   postCategories PostCategory[]
 }
 
+// ── 해시태그 ─────────────────────────────────────────────────────────────
+
+model Hashtag {
+  id   Int    @id @default(autoincrement())
+  name String @unique @db.VarChar(50)
+
+  posts PostHashtag[]
+}
+
+model PostHashtag {
+  postId    Int
+  hashtagId Int
+
+  post    Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  hashtag Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, hashtagId])
+}
+
 // ── 게시글 ────────────────────────────────────────────────────────────────
 
 enum PriceType {
   FREE        // 무료
   MONTHLY     // 월정액
+  YEARLY      // 년
   PER_SESSION // 회당
-  FIXED       // 정가 (중고거래 등)
   NEGOTIABLE  // 협의
 }
 
@@ -59,10 +79,10 @@ model Post {
   title        String     @db.VarChar(100)
   description  String?    @db.Text
   priceType    PriceType  @default(NEGOTIABLE)
-  priceAmount  Int?       // 원 단위 숫자 (무료/협의면 null)
-  priceDisplay String     @db.VarChar(100) // 표시용 "월 120,000원"
+  priceAmount  Int?                            // 원 단위 숫자 (무료/협의면 null)
+  priceDisplay String     @db.VarChar(100)     // 표시용 "월 120,000원"
   imageEmoji   String     @db.VarChar(10)
-  location     String     @db.VarChar(100) // 표시용 "마포구"
+  location     String     @db.VarChar(100)     // 표시용 "마포구"
   lat          Float?
   lng          Float?
   status       PostStatus @default(PUBLISHED)
@@ -73,14 +93,14 @@ model Post {
   authorId Int
   author   User @relation(fields: [authorId], references: [id])
 
-  categories    PostCategory[]
-  images        PostImage[]
-  locationTags  PostLocationTag[]
-  keywords      PostKeyword[]
-  comments      Comment[]
-  likes         Like[]
-  bookmarks     Bookmark[]
-  messages      Message[]
+  categories   PostCategory[]
+  images       PostImage[]
+  locationTags PostLocationTag[]
+  hashtags     PostHashtag[]
+  comments     Comment[]
+  likes        Like[]
+  bookmarks    Bookmark[]
+  messages     Message[]
 }
 
 // ── 게시글 ↔ 카테고리 (N:M) ──────────────────────────────────────────────
@@ -118,31 +138,20 @@ model PostLocationTag {
   @@index([tag])
 }
 
-// ── 게시글 검색 키워드 ────────────────────────────────────────────────────
-
-model PostKeyword {
-  id      Int    @id @default(autoincrement())
-  postId  Int
-  keyword String @db.VarChar(50)
-
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  @@index([keyword])
-}
-
 // ── 댓글 ──────────────────────────────────────────────────────────────────
 
 model Comment {
   id        Int      @id @default(autoincrement())
   content   String   @db.Text
+  guestName String?  @db.VarChar(50) // 비회원 닉네임 (로그인 전)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   postId   Int
-  authorId Int
+  authorId Int? // nullable: 비회원 댓글 허용
 
-  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author User @relation(fields: [authorId], references: [id])
+  post   Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User? @relation(fields: [authorId], references: [id])
 }
 
 // ── 좋아요 ────────────────────────────────────────────────────────────────

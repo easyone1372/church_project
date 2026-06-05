@@ -12,16 +12,16 @@ export default function Logo({ onClick }: LogoProps) {
       onClick={onClick}
     >
       <strong
-        className="text-[20px] tracking-tight1"
-        style={{ color: "var(--color-text-heading)" }}
-      >
-        리필
-      </strong>
-      <span
-        className="mt-1 text-[11px] tracking-wide5"
+        className="text-[22px] font-black tracking-widest"
         style={{ color: "var(--color-brand)" }}
       >
-        refill
+        REFILL
+      </strong>
+      <span
+        className="text-[10px] tracking-wide"
+        style={{ color: "var(--color-text-muted)" }}
+      >
+        음악을 채우다.
       </span>
     </Link>
   );

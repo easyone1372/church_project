@@ -5,9 +5,13 @@ import { SearchResultItem } from "@/data/sampleMockResults";
 import { WRITE_CATEGORIES } from "@/data/Categories";
 import CategorySelector from "@/components/molecules/CategorySelector";
 import ImagePicker from "@/components/molecules/ImagePicker";
+import TagInput from "@/components/molecules/TagInput";
 import RpInput from "@/components/atom/RpInput";
+import LocationSearch from "@/components/molecules/LocationSearch";
 import RpTextarea from "@/components/atom/RpTextarea";
 import Field from "@/components/atom/Field";
+import { ALL_KEYWORDS } from "@/data/sampleMockResults";
+import { PRICE_TYPES, generatePriceDisplay } from "@/data/postOptions";
 
 interface WritePostModalProps {
   isOpen: boolean;
@@ -25,11 +29,13 @@ export default function WritePostModal({
   );
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
-  const [price, setPrice] = useState("");
+  const [priceType, setPriceType] = useState<string>("monthly");
+  const [priceAmount, setPriceAmount] = useState("");
   const [iconMode, setIconMode] = useState<"emoji" | "image">("emoji");
   const [emoji, setEmoji] = useState("🎵");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [description, setDescription] = useState("");
+  const [keywords, setKeywords] = useState<string[]>([]);
 
   if (!isOpen) return null;
 
@@ -46,17 +52,15 @@ export default function WritePostModal({
     });
   };
 
-  const handleSubmit = () => {
-    if (!title.trim() || !location.trim() || !price.trim()) return;
+  const currentPriceType = PRICE_TYPES.find((t) => t.id === priceType)!;
 
-    const selected = WRITE_CATEGORIES.filter((c) =>
-      selectedCategories.has(c.id),
-    );
+  const handleSubmit = () => {
+    if (!title.trim() || !location.trim()) return;
+    if (currentPriceType.hasAmount && !priceAmount.trim()) return;
+
+    const selected = WRITE_CATEGORIES.filter((c) => selectedCategories.has(c.id));
     const tags = [...new Set(selected.flatMap((c) => c.tags))];
-    const locationTags = location
-      .trim()
-      .split(/[\s,]+/)
-      .filter((p) => p.length >= 2);
+    const locationTags = location.trim().split(/[\s,]+/).filter((p) => p.length >= 2);
 
     onSubmit({
       title: title.trim(),
@@ -64,26 +68,31 @@ export default function WritePostModal({
       location: location.trim(),
       locationTags: [...new Set(locationTags)],
       timeAgo: "방금 전",
-      price: price.trim(),
+      price: generatePriceDisplay(priceType, priceAmount),
       imageEmoji: emoji,
       imageUrl: iconMode === "image" && imageUrl ? imageUrl : undefined,
       tags,
-      keywords: [],
+      keywords,
       description: description.trim() || undefined,
     });
 
     setSelectedCategories(new Set(["lesson"]));
     setTitle("");
     setLocation("");
-    setPrice("");
+    setPriceType("monthly");
+    setPriceAmount("");
     setEmoji("🎵");
     setImageUrl(null);
     setIconMode("emoji");
     setDescription("");
+    setKeywords([]);
     onClose();
   };
 
-  const isValid = title.trim() && location.trim() && price.trim();
+  const isValid =
+    title.trim() &&
+    location.trim() &&
+    (!currentPriceType.hasAmount || priceAmount.trim());
 
   return (
     <div
@@ -133,20 +142,51 @@ export default function WritePostModal({
           </Field>
 
           <Field label="지역" required>
-            <RpInput
-              type="text"
+            <LocationSearch
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="예: 서울 마포구, 인천 서구"
+              onChange={setLocation}
+              onSelect={(place) => {
+                setLocation(place.roadAddress || place.address);
+              }}
+              placeholder="예: 검암동 투썸플레이스, 마포구"
             />
           </Field>
 
           <Field label="가격" required>
-            <RpInput
-              type="text"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="예: 월 100,000원 / 150,000원 / 무료"
+            <div className="flex flex-wrap gap-2">
+              {PRICE_TYPES.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setPriceType(t.id)}
+                  className={`px-3 py-1.5 rounded-full text-2xs font-semibold border cursor-pointer transition-colors ${
+                    priceType === t.id
+                      ? "bg-brand text-white border-brand"
+                      : "bg-white text-text-muted border-border-base hover:border-brand hover:text-brand"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            {currentPriceType.hasAmount && (
+              <div className="flex items-center gap-2 mt-2">
+                <RpInput
+                  type="text"
+                  value={priceAmount}
+                  onChange={(e) => setPriceAmount(e.target.value.replace(/[^0-9]/g, ""))}
+                  placeholder="금액을 입력하세요"
+                  className="flex-1"
+                />
+                <span className="text-xs text-text-muted shrink-0">원</span>
+              </div>
+            )}
+          </Field>
+
+          <Field label="해시태그">
+            <TagInput
+              tags={keywords}
+              onChange={setKeywords}
+              suggestions={ALL_KEYWORDS}
             />
           </Field>
 
@@ -155,11 +195,11 @@ export default function WritePostModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="상세 내용, 연락 방법, 기타 안내 사항을 자유롭게 작성해 주세요."
-              maxLength={500}
-              rows={4}
+              maxLength={1000}
+              rows={7}
             />
             <p className="text-right text-[10px] text-text-placeholder">
-              {description.length}/500
+              {description.length}/1000
             </p>
           </Field>
 
@@ -190,4 +230,3 @@ export default function WritePostModal({
     </div>
   );
 }
-

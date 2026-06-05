@@ -34,9 +34,7 @@ export default function TitleSection({ onSearch }: TitleSectionProps) {
         }}
       >
         음악을 더 쉽게{" "}
-        <span style={{ color: "var(--color-brand)" }}>
-          찾고, 배우고, 연결하다
-        </span>
+        <span style={{ color: "var(--color-brand)" }}>채우다.</span>
       </h1>
 
       <p

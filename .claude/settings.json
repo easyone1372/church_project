@@ -1,7 +1,21 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node -e \"require\\('dotenv/config'\\); const u = new URL\\(process.env.DATABASE_URL\\); console.log\\({host: u.hostname, port: u.port, user: u.username, pass: u.password, db: u.pathname.slice\\(1\\)}\\)\")"
+      "Bash(node -e \"require\\('dotenv/config'\\); const u = new URL\\(process.env.DATABASE_URL\\); console.log\\({host: u.hostname, port: u.port, user: u.username, pass: u.password, db: u.pathname.slice\\(1\\)}\\)\")",
+      "Bash(node -e \"const d = require\\('./src/data/sampleMockResults.ts'\\); console.log\\('skip'\\)\")",
+      "Bash(npx prisma *)",
+      "Bash(docker compose *)",
+      "Bash(Get-Service -Name \"MySQL*\")",
+      "Bash(Get-Service -Name \"mysql*\")",
+      "PowerShell(npx prisma migrate dev --name update_price_type 2>&1)",
+      "PowerShell(New-Item -ItemType Directory -Path \"d:\\\\church_project\\\\prisma\\\\migrations\\\\20260601000000_update_price_type\" -Force)",
+      "PowerShell(New-Item -ItemType Directory -Path \"d:\\\\church_project\\\\prisma\\\\migrations\\\\20260606000000_hashtag_and_comment\" -Force)",
+      "Bash(mkdir -p d:/church_project/src/app/api/posts/[id]/comments)",
+      "Bash(npx tsc *)",
+      "PowerShell(New-Item -ItemType Directory -Path \"d:\\\\church_project\\\\prisma\\\\migrations\\\\20260606010000_user_nickname\" -Force)"
+    ],
+    "additionalDirectories": [
+      "d:\\church_project\\src\\app\\api\\posts\\[id]"
     ]
   }
 }

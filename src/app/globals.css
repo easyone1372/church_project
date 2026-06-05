@@ -4,8 +4,8 @@
   /* ┌─────────────────────────────────────────────┐
      │                   Colors                    │
      └─────────────────────────────────────────────┘ */
-  --color-brand: #8dc53e; /* 메인 브랜드 컬러 - 버튼, 강조 텍스트, 아이콘 */
-  --color-brand-bg: #eff6ff; /* 브랜드 연한 배경 - Beta 배지 배경 */
+  --color-brand: #8f4bc6; /* 메인 브랜드 컬러 - 버튼, 강조 텍스트, 아이콘 */
+  --color-brand-bg: #f3e8ff; /* 브랜드 연한 배경 */
 
   --color-surface-page: #fbfcff; /* 페이지 전체 배경 */
   --color-surface-card: #f8fbff; /* ResultCard 배경 */
@@ -88,6 +88,24 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: "Pretendard", Arial, Helvetica, sans-serif;
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-base) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  height: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--color-border-base);
+  border-radius: 2px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
 }
 
 @font-face {
