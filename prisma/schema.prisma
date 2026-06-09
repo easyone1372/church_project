@@ -115,7 +115,7 @@ model Post {
   updatedAt    DateTime      @updatedAt
 
   authorId Int
-  author   User @relation(fields: [authorId], references: [id])
+  author   User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   categories   PostCategory[]
   images       PostImage[]
@@ -176,7 +176,7 @@ model Comment {
   parentId Int?  // null = 최상위 댓글, non-null = 대댓글
 
   post    Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author  User?    @relation(fields: [authorId], references: [id])
+  author  User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
   parent  Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies Comment[] @relation("CommentReplies")
 }
@@ -189,7 +189,7 @@ model Like {
   userId Int
   postId Int
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@id([userId, postId])
@@ -203,7 +203,7 @@ model Bookmark {
   userId Int
   postId Int
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@id([userId, postId])
@@ -221,7 +221,7 @@ model Message {
   receiverId Int
   postId     Int? // 어떤 글에 대한 문의인지 (선택)
 
-  sender   User  @relation("SentMessages", fields: [senderId], references: [id])
-  receiver User  @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender   User  @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User  @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
   post     Post? @relation(fields: [postId], references: [id])
 }
