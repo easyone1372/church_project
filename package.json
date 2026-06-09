@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "prisma migrate dev",
@@ -13,14 +13,14 @@
     "db:reset": "prisma migrate reset"
   },
   "dependencies": {
-    "@prisma/adapter-mariadb": "^7.8.0",
+    "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "@types/pg": "^8.20.0",
     "@vercel/blob": "^2.4.0",
     "dotenv": "^17.4.2",
-    "mariadb": "^3.5.2",
-    "mysql2": "^3.22.4",
     "next": "16.2.4",
     "next-auth": "^5.0.0-beta.31",
+    "pg": "^8.21.0",
     "prisma": "^7.8.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"

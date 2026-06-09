@@ -1,15 +1,8 @@
 import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const dbUrl = new URL(process.env.DATABASE_URL!);
-const adapter = new PrismaMariaDb({
-  host:     dbUrl.hostname,
-  port:     Number(dbUrl.port) || 3306,
-  user:     dbUrl.username,
-  password: dbUrl.password,
-  database: dbUrl.pathname.slice(1),
-});
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
