@@ -167,15 +167,18 @@ model PostLocationTag {
 model Comment {
   id        Int      @id @default(autoincrement())
   content   String   @db.Text
-  guestName String?  @db.VarChar(50) // 비회원 닉네임 (로그인 전)
+  guestName String?  @db.VarChar(50)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   postId   Int
-  authorId Int? // nullable: 비회원 댓글 허용
+  authorId Int?
+  parentId Int?  // null = 최상위 댓글, non-null = 대댓글
 
-  post   Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author User? @relation(fields: [authorId], references: [id])
+  post    Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User?    @relation(fields: [authorId], references: [id])
+  parent  Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
 }
 
 // ── 좋아요 ────────────────────────────────────────────────────────────────

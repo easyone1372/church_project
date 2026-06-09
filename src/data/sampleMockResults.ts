@@ -21,6 +21,9 @@ export interface SearchResultItem {
   direction: PostDirection;
   lat?: number;
   lng?: number;
+  imageUrls?: string[];       // 전체 이미지 URL 배열
+  priceType?: string;         // 수정 폼 pre-fill용
+  priceAmount?: number | null;
 }
 
 // 글 작성 시 WritePostModal → API로 전달되는 데이터 타입
@@ -31,7 +34,7 @@ export interface PostDraft {
   priceAmount: string;  // 숫자 문자열 (무료/협의면 "")
   priceDisplay: string;
   imageEmoji: string;
-  imageUrl?: string;
+  imageUrls?: string[];  // 업로드된 이미지 URL 배열
   location: string;
   locationTags: string[];
   tags: string[];      // 카테고리 슬러그 배열

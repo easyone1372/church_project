@@ -5,6 +5,8 @@ export const POST_SELECT = {
   id: true,
   title: true,
   description: true,
+  priceType: true,
+  priceAmount: true,
   priceDisplay: true,
   imageEmoji: true,
   location: true,
@@ -17,12 +19,15 @@ export const POST_SELECT = {
   categories: { select: { category: { select: { slug: true, name: true } } } },
   hashtags: { select: { hashtag: { select: { name: true } } } },
   locationTags: { select: { tag: true } },
+  images: { select: { url: true, order: true }, orderBy: { order: "asc" as const } },
 } as const;
 
 export type PostRow = {
   id: number;
   title: string;
   description: string | null;
+  priceType: string;
+  priceAmount: number | null;
   priceDisplay: string;
   imageEmoji: string;
   location: string;
@@ -35,6 +40,7 @@ export type PostRow = {
   categories: Array<{ category: { slug: string; name: string } }>;
   hashtags: Array<{ hashtag: { name: string } }>;
   locationTags: Array<{ tag: string }>;
+  images: Array<{ url: string; order: number }>;
 };
 
 export function timeAgo(date: Date): string {
@@ -69,5 +75,9 @@ export function mapPost(post: PostRow): SearchResultItem {
     direction: post.direction.toLowerCase() as PostDirection,
     lat: post.lat ?? undefined,
     lng: post.lng ?? undefined,
+    imageUrls: post.images.map((img) => img.url),
+    imageUrl: post.images[0]?.url ?? undefined,
+    priceType: post.priceType.toLowerCase(),
+    priceAmount: post.priceAmount,
   };
 }

@@ -2,14 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
-const COMMENT_SELECT = {
+const REPLY_SELECT = {
   id: true,
   content: true,
   guestName: true,
   authorId: true,
+  parentId: true,
   createdAt: true,
   updatedAt: true,
   author: { select: { name: true, nickname: true } },
+} as const;
+
+const COMMENT_SELECT = {
+  ...REPLY_SELECT,
+  replies: {
+    select: REPLY_SELECT,
+    orderBy: { createdAt: "asc" as const },
+  },
 } as const;
 
 export async function GET(
@@ -20,7 +29,7 @@ export async function GET(
   if (isNaN(postId)) return NextResponse.json({ error: "invalid id" }, { status: 400 });
 
   const comments = await prisma.comment.findMany({
-    where: { postId },
+    where: { postId, parentId: null }, // 최상위 댓글만
     orderBy: { createdAt: "asc" },
     select: COMMENT_SELECT,
   });
@@ -46,18 +55,31 @@ export async function POST(
   const post = await prisma.post.findUnique({ where: { id: postId }, select: { id: true } });
   if (!post) return NextResponse.json({ error: "post not found" }, { status: 404 });
 
-  // 로그인 유저: authorId 세팅, guestName 없음
-  // 비로그인 유저: guestName 사용
+  // 대댓글인 경우 parentId 검증
+  const parentId = body.parentId ? Number(body.parentId) : null;
+  if (parentId) {
+    const parent = await prisma.comment.findUnique({
+      where: { id: parentId },
+      select: { postId: true, parentId: true },
+    });
+    if (!parent || parent.postId !== postId) {
+      return NextResponse.json({ error: "invalid parent" }, { status: 400 });
+    }
+    if (parent.parentId !== null) {
+      return NextResponse.json({ error: "nested replies not allowed" }, { status: 400 });
+    }
+  }
+
   const guestName = userId ? null : ((body.guestName ?? "").trim().slice(0, 20) || "익명");
 
   const { id: commentId } = await prisma.comment.create({
-    data: { postId, content, guestName, authorId: userId ?? null },
+    data: { postId, content, guestName, authorId: userId ?? null, parentId },
     select: { id: true },
   });
 
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
-    select: COMMENT_SELECT,
+    select: REPLY_SELECT,
   });
 
   return NextResponse.json(comment, { status: 201 });

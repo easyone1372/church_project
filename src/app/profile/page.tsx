@@ -36,6 +36,8 @@ export default function ProfilePage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [myPosts, setMyPosts] = useState<SearchResultItem[]>([]);
   const [myBookmarks, setMyBookmarks] = useState<SearchResultItem[]>([]);
+  const [deletingPostId, setDeletingPostId] = useState<number | null>(null);
+  const [postDeleteLoading, setPostDeleteLoading] = useState(false);
 
   // 아바타 업로드 상태
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -142,6 +144,20 @@ export default function ProfilePage() {
       setProfile((p) => p ? { ...p, avatarUrl: null } : p);
     } finally {
       setAvatarUploading(false);
+    }
+  };
+
+  const handlePostDelete = async (postId: number) => {
+    if (postDeleteLoading) return;
+    setPostDeleteLoading(true);
+    try {
+      const res = await fetch(`/api/posts/${postId}`, { method: "DELETE" });
+      if (res.ok) {
+        setMyPosts((prev) => prev.filter((p) => p.id !== postId));
+        setDeletingPostId(null);
+      }
+    } finally {
+      setPostDeleteLoading(false);
     }
   };
 
@@ -431,10 +447,10 @@ export default function ProfilePage() {
             ) : (
               <ul className="divide-y divide-border-base">
                 {myPosts.map((post) => (
-                  <li key={post.id}>
+                  <li key={post.id} className="flex items-center gap-2 px-4 sm:px-6 py-3 hover:bg-surface-card transition-colors">
                     <Link
                       href={`/post/${post.id}`}
-                      className="flex items-center gap-4 px-6 py-4 hover:bg-surface-card transition-colors"
+                      className="flex items-center gap-4 flex-1 min-w-0"
                     >
                       <div className="w-10 h-10 rounded-xl bg-brand-bg flex items-center justify-center text-xl shrink-0">
                         {post.imageEmoji}
@@ -443,8 +459,33 @@ export default function ProfilePage() {
                         <p className="text-[14px] font-semibold text-text-heading truncate">{post.title}</p>
                         <p className="text-[12px] text-text-muted mt-0.5">{post.location} · {post.timeAgo}</p>
                       </div>
-                      <span className="text-[13px] font-semibold text-brand shrink-0">{post.price}</span>
+                      <span className="text-[13px] font-semibold text-brand shrink-0 mr-2">{post.price}</span>
                     </Link>
+
+                    {deletingPostId === post.id ? (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          onClick={() => handlePostDelete(post.id)}
+                          disabled={postDeleteLoading}
+                          className="px-2.5 h-7 rounded-lg bg-red-500 text-white text-[11px] font-semibold border-none cursor-pointer hover:bg-red-600 disabled:opacity-50"
+                        >
+                          {postDeleteLoading ? "…" : "삭제"}
+                        </button>
+                        <button
+                          onClick={() => setDeletingPostId(null)}
+                          className="px-2.5 h-7 rounded-lg border border-border-base text-[11px] text-text-muted bg-white cursor-pointer hover:bg-surface-card"
+                        >
+                          취소
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setDeletingPostId(post.id)}
+                        className="shrink-0 px-2.5 h-7 rounded-lg border border-red-300 text-red-500 text-[11px] font-semibold bg-transparent cursor-pointer hover:bg-red-50 transition-colors"
+                      >
+                        삭제
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>

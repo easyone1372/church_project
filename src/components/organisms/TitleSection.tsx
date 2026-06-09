@@ -18,11 +18,8 @@ export default function TitleSection({ onSearch }: TitleSectionProps) {
 
   return (
     <main
-      className="mx-auto text-center px-4"
-      style={{
-        maxWidth: "var(--max-w-hero)",
-        paddingTop: "var(--pt-hero)",
-      }}
+      className="mx-auto text-center px-4 pt-16 sm:pt-42.5"
+      style={{ maxWidth: "var(--max-w-hero)" }}
     >
       <h1
         className={`m-0 font-bold leading-snug text-[32px] sm:text-[46px] md:text-[58px] lg:text-[64px] ${anim.fadeUp}`}
@@ -37,14 +34,15 @@ export default function TitleSection({ onSearch }: TitleSectionProps) {
       </h1>
 
       <p
-        className={`mt-4 sm:mt-6 text-[15px] sm:text-[18px] md:text-[22px] ${anim.fadeUp}`}
+        className={`mt-6 mb-8 sm:mb-13 text-[14px] sm:text-[18px] md:text-[22px] leading-relaxed ${anim.fadeUp}`}
         style={{
-          marginBottom: "var(--mb-hero-desc)",
           color: "var(--color-text-muted)",
           animationDelay: "200ms",
         }}
       >
-        AI가 음악 레슨, 악기, 선생님, 모임, 중고거래까지 빠르게 찾아드려요.
+        AI가 음악 레슨, 악기, 선생님,{" "}
+        <br className="sm:hidden" />
+        모임, 중고거래까지 빠르게 찾아드려요.
       </p>
 
       <SearchBar value={query} onChange={setQuery} onSearch={handleSearch} />

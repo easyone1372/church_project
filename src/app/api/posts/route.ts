@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   }
   const {
     title, description, priceType, priceAmount, priceDisplay,
-    imageEmoji, location, locationTags, tags, keywords, direction, lat, lng,
+    imageEmoji, imageUrls, location, locationTags, tags, keywords, direction, lat, lng,
   } = body;
 
   if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
@@ -107,6 +107,11 @@ export async function POST(req: NextRequest) {
     for (const t of (Array.isArray(locationTags) ? locationTags : [])) {
       if (!t?.trim()) continue;
       await prisma.postLocationTag.create({ data: { postId, tag: t.trim().slice(0, 50) } });
+    }
+    const urls: string[] = Array.isArray(imageUrls) ? imageUrls : [];
+    for (let i = 0; i < urls.length; i++) {
+      if (!urls[i]) continue;
+      await prisma.postImage.create({ data: { postId, url: urls[i], order: i } });
     }
 
     const created = await prisma.post.findUnique({
