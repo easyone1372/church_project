@@ -23,60 +23,74 @@ export default function SearchBar({
   const [permBlocked, setPermBlocked] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [diagInfo, setDiagInfo] = useState<string | null>(null);
+
   const recRef = useRef<any>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
-  useEffect(
-    () => () => {
-      recRef.current?.stop();
-    },
-    [],
-  );
-
-  const showError = (msg: string) => {
-    setErrorMsg(msg);
-    setTimeout(() => setErrorMsg(""), 6000);
-  };
-
-  const startListening = () => {
-    if (micStatus !== "idle") return;
-
-    // 마이크 재요청 시 기존에 떠있던 블락 UI나 에러를 잠시 가려주어 초기화 흐름을 확보합니다.
-    setPermBlocked(false);
+  // 1. 컴포넌트가 켜질 때 딱 한 번만 SpeechRecognition 초기화 (가장 중요)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
     const SR =
       (window as any).SpeechRecognition ??
       (window as any).webkitSpeechRecognition;
-    if (!SR) {
-      showError(
-        "이 브라우저는 음성 인식을 지원하지 않아요. Chrome을 사용해 주세요.",
-      );
-      return;
-    }
+    if (!SR) return;
 
     const rec = new SR();
     rec.lang = "ko-KR";
     rec.continuous = false;
     rec.interimResults = true;
 
+    recRef.current = rec;
+
+    // 컴포넌트 언마운트 시 마이크 종료 정리
+    return () => {
+      rec.hisStop?.();
+    };
+  }, []);
+
+  const showError = (msg: string) => {
+    setErrorMsg(msg);
+    setTimeout(() => setErrorMsg(""), 6000);
+  };
+
+  const startListening = (e: React.MouseEvent) => {
+    if (micStatus !== "idle") return;
+
+    // 브라우저의 기본 이벤트 흐름을 꽉 잡아두기 위함
+    e.preventDefault();
+    e.stopPropagation();
+
+    const rec = recRef.current;
+    if (!rec) {
+      showError(
+        "이 브라우저는 음성 인식을 지원하지 않거나 초기화되지 않았습니다.",
+      );
+      return;
+    }
+
+    setPermBlocked(false);
     let accumulated = "";
 
+    // 이벤트 핸들러들을 매번 실행 시점에 신선하게 주입
     rec.onstart = () => setMicStatus("listening");
 
-    rec.onresult = (e: any) => {
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) accumulated += e.results[i][0].transcript;
+    rec.onresult = (event: any) => {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal)
+          accumulated += event.results[i][0].transcript;
       }
       let interim = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (!e.results[i].isFinal) interim += e.results[i][0].transcript;
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (!event.results[i].isFinal)
+          interim += event.results[i][0].transcript;
       }
       const live = (accumulated + interim).trim();
       if (live) onChangeRef.current(live);
     };
 
-    rec.onerror = async (e: any) => {
+    rec.onerror = async (errEvent: any) => {
       let permState = "알 수 없음";
       try {
         const ps = await navigator.permissions.query({
@@ -84,17 +98,21 @@ export default function SearchBar({
         });
         permState = ps.state;
       } catch {}
-      const info = `오류: ${e.error} | URL: ${window.location.host} | 보안컨텍스트: ${window.isSecureContext} | 권한: ${permState}`;
+
+      const info = `오류: ${errEvent.error} | URL: ${window.location.host} | 보안컨텍스트: ${window.isSecureContext} | 권한: ${permState}`;
       console.error("[Mic]", info);
       setDiagInfo(info);
       setMicStatus("idle");
-      if (recRef.current === rec) recRef.current = null;
-      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+
+      if (
+        errEvent.error === "not-allowed" ||
+        errEvent.error === "service-not-allowed"
+      ) {
         setPermBlocked(true);
-      } else if (e.error === "no-speech") {
+      } else if (errEvent.error === "no-speech") {
         showError("음성이 감지되지 않았어요. 마이크에 대고 말씀해 주세요.");
-      } else if (e.error !== "aborted") {
-        showError(`음성 인식 오류: ${e.error}`);
+      } else if (errEvent.error !== "aborted") {
+        showError(`음성 인식 오류: ${errEvent.error}`);
       }
     };
 
@@ -106,14 +124,10 @@ export default function SearchBar({
         );
       }
       setMicStatus("idle");
-      if (recRef.current === rec) recRef.current = null;
     };
 
-    recRef.current = rec;
-
+    // 브라우저가 유저의 실시간 onClick 스택 안에서 곧바로 start()를 인지하도록 처리
     try {
-      // 리액트 상태 변경보다 브라우저 마이크 작동 명령(rec.start())을 먼저 처리하여
-      // 최신 브라우저의 사용자 직접 클릭 제스처 보안 조건(User Gesture Restriction)을 우회합니다.
       rec.start();
       setMicStatus("requesting");
     } catch (err: any) {
@@ -125,7 +139,6 @@ export default function SearchBar({
 
   const stopListening = () => {
     recRef.current?.stop();
-    recRef.current = null;
     setMicStatus("idle");
   };
 
@@ -154,8 +167,11 @@ export default function SearchBar({
           className="flex-1 min-w-0 border-none outline-none text-[15px] sm:text-base text-text-body bg-transparent placeholder-text-placeholder"
         />
 
+        {/* 중요: onClick에 이벤트 객체(e)를 넘겨줍니다 */}
         <button
-          onClick={micStatus === "listening" ? stopListening : startListening}
+          onClick={(e) =>
+            micStatus === "listening" ? stopListening() : startListening(e)
+          }
           disabled={micStatus === "requesting"}
           title={micStatus === "listening" ? "음성 입력 중지" : "음성으로 검색"}
           className={`border-none cursor-pointer transition-all flex items-center justify-center rounded-full w-8 h-8 shrink-0 ${
@@ -201,7 +217,7 @@ export default function SearchBar({
         </RpButton>
       </div>
 
-      {/* 진단 정보 */}
+      {/* 진단 정보 UI */}
       {diagInfo && (
         <div className="mx-4 px-4 py-2 bg-gray-100 border border-gray-300 rounded-2xl text-[11px] text-gray-700 font-mono break-all flex justify-between gap-2">
           <span>{diagInfo}</span>
@@ -214,57 +230,27 @@ export default function SearchBar({
         </div>
       )}
 
-      {/* 일반 오류 */}
+      {/* 에러 및 블락 안내 UI (기존과 동일) */}
       {errorMsg && (
         <div className="mx-4 px-4 py-2.5 bg-red-50 border border-red-200 rounded-2xl text-[12px] text-red-700 leading-relaxed">
           ⚠️ {errorMsg}
         </div>
       )}
-
-      {/* 마이크 권한 차단 안내 */}
       {permBlocked && (
         <div className="mx-2 px-4 py-3 bg-orange-50 border border-orange-200 rounded-2xl text-[12px] text-orange-900 leading-relaxed shadow-sm">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1">
               <p className="font-bold mb-1.5">🎤 마이크가 차단됨</p>
-              {typeof window !== "undefined" && !window.isSecureContext ? (
-                <>
-                  <p className="text-red-700 font-semibold mb-1">
-                    ⚠️ 보안 컨텍스트 오류
-                  </p>
-                  <p className="text-orange-800 mb-1">
-                    현재 주소:{" "}
-                    <code className="bg-orange-100 px-1 rounded">
-                      {window.location.host}
-                    </code>
-                  </p>
-                  <p className="text-orange-800">
-                    마이크/위치는 <strong>localhost</strong> 또는{" "}
-                    <strong>HTTPS</strong>에서만 작동해요.
-                  </p>
-                  <p className="mt-1 text-orange-700">
-                    브라우저 주소창을 <strong>localhost:3000</strong>으로 바꿔서
-                    접속하세요.
-                  </p>
-                </>
-              ) : (
-                <ol className="list-decimal list-inside space-y-1 text-orange-800">
-                  <li>
-                    주소창 <strong>🔒 자물쇠</strong> 클릭 →{" "}
-                    <strong>사이트 설정</strong>
-                  </li>
-                  <li>
-                    <strong>마이크 → 허용</strong>으로 변경
-                  </li>
-                  <li>
-                    Windows <strong>설정 → 개인 정보 → 마이크</strong>에서
-                    Chrome 허용 확인
-                  </li>
-                  <li>
-                    페이지 <strong>새로고침</strong> 후 재시도
-                  </li>
-                </ol>
-              )}
+              <ol className="list-decimal list-inside space-y-1 text-orange-800">
+                <li>
+                  주소창 <strong>🔒 자물쇠</strong> 클릭 →{" "}
+                  <strong>사이트 설정</strong>
+                </li>
+                <li>
+                  <strong>마이크 → 허용</strong>으로 변경
+                </li>
+                <li>새로고침 후 재시도</li>
+              </ol>
             </div>
             <button
               onClick={() => setPermBlocked(false)}
