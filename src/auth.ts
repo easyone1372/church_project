@@ -48,15 +48,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           data: {
             name: (user.name ?? "사용자").slice(0, 50),
             email: user.email ? user.email.slice(0, 255) : undefined,
-            oauthAccounts: {
-              create: {
-                provider: account.provider,
-                providerAccountId: account.providerAccountId,
-                accessToken: account.access_token ?? undefined,
-                refreshToken: account.refresh_token ?? undefined,
-                expiresAt: account.expires_at ?? undefined,
-              },
-            },
+          },
+        });
+
+        await prisma.oAuthAccount.create({
+          data: {
+            userId: newUser.id,
+            provider: account.provider,
+            providerAccountId: account.providerAccountId,
+            accessToken: account.access_token ?? undefined,
+            refreshToken: account.refresh_token ?? undefined,
+            expiresAt: account.expires_at ?? undefined,
           },
         });
 
