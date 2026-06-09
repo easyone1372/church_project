@@ -60,9 +60,14 @@ export default function WritePostModal({
     if (!title.trim() || !location.trim()) return;
     if (currentPriceType.hasAmount && !priceAmount.trim()) return;
 
-    const selected = WRITE_CATEGORIES.filter((c) => selectedCategories.has(c.id));
+    const selected = WRITE_CATEGORIES.filter((c) =>
+      selectedCategories.has(c.id),
+    );
     const tags = [...new Set(selected.flatMap((c) => c.tags))];
-    const locationTags = location.trim().split(/[\s,]+/).filter((p) => p.length >= 2);
+    const locationTags = location
+      .trim()
+      .split(/[\s,]+/)
+      .filter((p) => p.length >= 2);
 
     onSubmit({
       title: title.trim(),
@@ -140,12 +145,10 @@ export default function WritePostModal({
               const { offer, seek } = getDirectionLabels(selectedCategories);
               return (
                 <div className="flex gap-2">
-                  {(
-                    [
-                      { value: "offer" as PostDirection, label: offer },
-                      { value: "seek"  as PostDirection, label: seek  },
-                    ]
-                  ).map(({ value, label }) => (
+                  {[
+                    { value: "offer" as PostDirection, label: offer },
+                    { value: "seek" as PostDirection, label: seek },
+                  ].map(({ value, label }) => (
                     <button
                       key={value}
                       type="button"
@@ -183,7 +186,7 @@ export default function WritePostModal({
               onSelect={(place) => {
                 setLocation(place.roadAddress || place.address);
               }}
-              placeholder="예: 검암동 투썸플레이스, 마포구"
+              placeholder="예: 상암동 투썸 플레이스, 마포구"
             />
           </Field>
 
@@ -208,7 +211,9 @@ export default function WritePostModal({
                 <RpInput
                   type="text"
                   value={priceAmount}
-                  onChange={(e) => setPriceAmount(e.target.value.replace(/[^0-9]/g, ""))}
+                  onChange={(e) =>
+                    setPriceAmount(e.target.value.replace(/[^0-9]/g, ""))
+                  }
                   placeholder="금액을 입력하세요"
                   className="flex-1"
                 />

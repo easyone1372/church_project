@@ -88,20 +88,28 @@ export async function POST(req: NextRequest) {
       lng: typeof lng === "number" ? lng : null,
       direction: direction === "seek" ? "SEEK" : "OFFER",
       authorId: userId,
-      categories: {
-        create: categories.map((c: { id: number }) => ({ categoryId: c.id })),
-      },
-      hashtags: {
-        create: hashtagIds.map((hashtagId: number) => ({ hashtagId })),
-      },
-      locationTags: {
-        create: (Array.isArray(locationTags) ? locationTags : [])
-          .filter((t: string) => t?.trim())
-          .map((tag: string) => ({ tag: tag.trim().slice(0, 50) })),
-      },
     },
+    select: { id: true },
+  });
+
+  const postId = post.id;
+
+  // 중첩 create 대신 순차 create (PrismaNeonHttp는 트랜잭션 미지원)
+  for (const c of categories) {
+    await prisma.postCategory.create({ data: { postId, categoryId: c.id } });
+  }
+  for (const hashtagId of hashtagIds) {
+    await prisma.postHashtag.create({ data: { postId, hashtagId } });
+  }
+  for (const t of (Array.isArray(locationTags) ? locationTags : [])) {
+    if (!t?.trim()) continue;
+    await prisma.postLocationTag.create({ data: { postId, tag: t.trim().slice(0, 50) } });
+  }
+
+  const created = await prisma.post.findUnique({
+    where: { id: postId },
     select: POST_SELECT,
   });
 
-  return NextResponse.json(mapPost(post), { status: 201 });
+  return NextResponse.json(mapPost(created!), { status: 201 });
 }
