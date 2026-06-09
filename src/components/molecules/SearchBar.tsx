@@ -59,8 +59,14 @@ export default function SearchBar({ value, onChange, onSearch }: SearchBarProps)
       if (live) onChangeRef.current(live);
     };
 
-    rec.onerror = (e: any) => {
+    rec.onerror = async (e: any) => {
       console.error("[Mic] SpeechRecognition error:", e.error);
+      console.error("[Mic] URL:", window.location.href);
+      console.error("[Mic] isSecureContext:", window.isSecureContext);
+      try {
+        const ps = await navigator.permissions.query({ name: "microphone" as PermissionName });
+        console.error("[Mic] permission state:", ps.state);
+      } catch {}
       setMicStatus("idle");
       if (recRef.current === rec) recRef.current = null;
       if (e.error === "not-allowed" || e.error === "service-not-allowed") {
@@ -155,27 +161,27 @@ export default function SearchBar({ value, onChange, onSearch }: SearchBarProps)
       {permBlocked && (
         <div className="mx-2 px-4 py-3 bg-orange-50 border border-orange-200 rounded-2xl text-[12px] text-orange-900 leading-relaxed shadow-sm">
           <div className="flex items-start justify-between gap-2">
-            <div>
-              <p className="font-bold mb-1.5">🎤 마이크 권한을 허용해야 해요</p>
-              <p className="text-orange-700 mb-2">Chrome이 이 사이트의 마이크를 차단하고 있어요. 아래 순서대로 해제해 주세요.</p>
-              <ol className="list-decimal list-inside space-y-1 text-orange-800">
-                <li>주소창 왼쪽 <strong>🔒 자물쇠(또는 ℹ️)</strong> 아이콘 클릭</li>
-                <li><strong>사이트 설정</strong> 클릭</li>
-                <li><strong>마이크</strong> 항목을 <strong>허용</strong>으로 변경</li>
-                <li>페이지 <strong>새로고침</strong> 후 다시 시도</li>
-              </ol>
+            <div className="flex-1">
+              <p className="font-bold mb-1.5">🎤 마이크가 차단됨</p>
+              {typeof window !== "undefined" && !window.isSecureContext ? (
+                <>
+                  <p className="text-red-700 font-semibold mb-1">⚠️ 보안 컨텍스트 오류</p>
+                  <p className="text-orange-800 mb-1">현재 주소: <code className="bg-orange-100 px-1 rounded">{window.location.host}</code></p>
+                  <p className="text-orange-800">마이크/위치는 <strong>localhost</strong> 또는 <strong>HTTPS</strong>에서만 작동해요.</p>
+                  <p className="mt-1 text-orange-700">브라우저 주소창을 <strong>localhost:3000</strong>으로 바꿔서 접속하세요.</p>
+                </>
+              ) : (
+                <ol className="list-decimal list-inside space-y-1 text-orange-800">
+                  <li>주소창 <strong>🔒 자물쇠</strong> 클릭 → <strong>사이트 설정</strong></li>
+                  <li><strong>마이크 → 허용</strong>으로 변경</li>
+                  <li>Windows <strong>설정 → 개인 정보 → 마이크</strong>에서 Chrome 허용 확인</li>
+                  <li>페이지 <strong>새로고침</strong> 후 재시도</li>
+                </ol>
+              )}
             </div>
-            <button
-              onClick={() => setPermBlocked(false)}
-              className="text-orange-400 hover:text-orange-700 border-none bg-transparent cursor-pointer shrink-0 text-base leading-none"
-            >
-              ✕
-            </button>
+            <button onClick={() => setPermBlocked(false)} className="text-orange-400 hover:text-orange-700 border-none bg-transparent cursor-pointer shrink-0 text-base leading-none">✕</button>
           </div>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-3 w-full py-1.5 rounded-xl bg-orange-500 text-white text-[12px] font-semibold border-none cursor-pointer hover:bg-orange-600 transition-colors"
-          >
+          <button onClick={() => window.location.reload()} className="mt-3 w-full py-1.5 rounded-xl bg-orange-500 text-white text-[12px] font-semibold border-none cursor-pointer hover:bg-orange-600 transition-colors">
             새로고침
           </button>
         </div>
