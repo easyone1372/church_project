@@ -73,7 +73,7 @@ export async function PATCH(
     const body = await req.json();
     const { title, description, priceType, priceAmount, priceDisplay, imageEmoji, location, locationTags, tags, keywords, direction, imageUrls } = body;
 
-    await prisma.post.update({
+    await (prisma.post.update as any)({
       where: { id: postId },
       data: {
         title: title?.trim().slice(0, 100),
