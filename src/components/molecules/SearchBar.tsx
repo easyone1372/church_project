@@ -21,22 +21,11 @@ export default function SearchBar({ value, onChange, onSearch }: SearchBarProps)
 
   useEffect(() => () => { recRef.current?.abort(); }, []);
 
-  const startListening = async () => {
+  const startListening = () => {
     const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
     if (!SR) {
       setPermDenied(true);
       setTimeout(() => setPermDenied(false), 4000);
-      return;
-    }
-
-    // 브라우저 기본 마이크 권한 요청 다이얼로그 발생
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((t) => t.stop()); // 권한 확인 후 즉시 해제
-    } catch {
-      // 거부됐거나 지원 안 됨 → 인라인 가이드 표시
-      setPermDenied(true);
-      setTimeout(() => setPermDenied(false), 5000);
       return;
     }
 
@@ -59,7 +48,11 @@ export default function SearchBar({ value, onChange, onSearch }: SearchBarProps)
       if (live) onChangeRef.current(live);
     };
 
-    rec.onerror = () => {
+    rec.onerror = (e: any) => {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        setPermDenied(true);
+        setTimeout(() => setPermDenied(false), 5000);
+      }
       setIsListening(false);
       if (recRef.current === rec) recRef.current = null;
     };
