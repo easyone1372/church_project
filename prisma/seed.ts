@@ -1,11 +1,15 @@
-import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { loadEnvConfig } from "@next/env";
+import path from "path";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
-const prisma = new PrismaClient({ adapter });
+loadEnvConfig(path.resolve(__dirname, ".."));
+
+import { PrismaClient } from "../src/generated/prisma/client";
+import { PrismaNeonHttp } from "@prisma/adapter-neon";
 
 async function main() {
+  const adapter = new PrismaNeonHttp(process.env.DATABASE_URL!, {});
+  const prisma = new PrismaClient({ adapter });
+
   const categories = [
     { slug: "lesson",     name: "레슨" },
     { slug: "band",       name: "밴드/합주" },
@@ -31,8 +35,7 @@ async function main() {
   }
 
   console.log(`✅ ${categories.length}개 카테고리 시드 완료`);
+  await prisma.$disconnect();
 }
 
-main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());
+main().catch(console.error);
