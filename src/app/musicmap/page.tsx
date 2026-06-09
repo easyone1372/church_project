@@ -41,10 +41,16 @@ export default function MusicMapPage() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<SearchResultItem | null>(null);
   const [chipFilter, setChipFilter] = useState("all");
+  const [geoBlocked, setGeoBlocked] = useState(false);
 
   const handleMarkerClick = useCallback((item: SearchResultItem) => {
     setSelectedItem(item);
     setPanelOpen(true);
+  }, []);
+
+  const handleGeoError = useCallback(() => {
+    setGeoBlocked(true);
+    setTimeout(() => setGeoBlocked(false), 5000);
   }, []);
 
   const { mapObjRef, renderMarkers } = useNaverMap({
@@ -52,6 +58,7 @@ export default function MusicMapPage() {
     coordsRef,
     filteredItemsRef,
     onMarkerClick: handleMarkerClick,
+    onGeoError: handleGeoError,
   });
 
   /* ── 게시글 로드 ── */
@@ -215,7 +222,7 @@ export default function MusicMapPage() {
         mapObjRef.current.panTo(new window.naver.maps.LatLng(lat, lng));
         mapObjRef.current.setZoom(15);
       },
-      () => {},
+      handleGeoError,
       { timeout: 5000 },
     );
   };
@@ -236,17 +243,27 @@ export default function MusicMapPage() {
           ))}
         </div>
 
-        <button
-          onClick={handleMyLocation}
-          title="내 위치로 이동"
-          className="absolute bottom-20 right-6 z-10 w-11 h-11 rounded-full bg-white text-text-body flex items-center justify-center border-none cursor-pointer hover:bg-surface-card transition-colors shadow-search"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-            <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z" strokeOpacity="0.2" />
-          </svg>
-        </button>
+        <div className="absolute bottom-20 right-6 z-10 flex flex-col items-end gap-2">
+          {geoBlocked && (
+            <div className="bg-gray-900 text-white text-[11px] rounded-xl px-3 py-2 whitespace-nowrap shadow-lg leading-relaxed">
+              위치 권한이 차단되어 있어요.
+              <br />
+              주소창 🔒 → <strong>위치 → 허용</strong>
+              <span className="absolute right-4 border-4 border-transparent border-t-gray-900" style={{ top: "100%" }} />
+            </div>
+          )}
+          <button
+            onClick={handleMyLocation}
+            title="내 위치로 이동"
+            className="w-11 h-11 rounded-full bg-white text-text-body flex items-center justify-center border-none cursor-pointer hover:bg-surface-card transition-colors shadow-search"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+              <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z" strokeOpacity="0.2" />
+            </svg>
+          </button>
+        </div>
 
         <button
           onClick={() => {

@@ -9,6 +9,7 @@ interface UseNaverMapOptions {
   coordsRef: RefObject<CoordsMap>;
   filteredItemsRef: RefObject<SearchResultItem[]>;
   onMarkerClick: (item: SearchResultItem) => void;
+  onGeoError?: () => void;
 }
 
 export function useNaverMap({
@@ -16,6 +17,7 @@ export function useNaverMap({
   coordsRef,
   filteredItemsRef,
   onMarkerClick,
+  onGeoError,
 }: UseNaverMapOptions) {
   const mapObjRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -90,7 +92,7 @@ export function useNaverMap({
             },
           });
         },
-        () => {},
+        () => { onGeoError?.(); },
         { timeout: 5000 },
       );
     }

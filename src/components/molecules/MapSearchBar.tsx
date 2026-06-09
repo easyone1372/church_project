@@ -12,16 +12,27 @@ interface MapSearchBarProps {
 
 export default function MapSearchBar({ value, onChange, onSearch, onClear }: MapSearchBarProps) {
   const [isListening, setIsListening] = useState(false);
+  const [permDenied, setPermDenied] = useState(false);
   const recRef = useRef<any>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
   useEffect(() => () => { recRef.current?.abort(); }, []);
 
-  const startListening = () => {
+  const startListening = async () => {
     const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
     if (!SR) {
-      alert("음성 검색은 Chrome 또는 Edge 브라우저에서 사용 가능해요.");
+      setPermDenied(true);
+      setTimeout(() => setPermDenied(false), 4000);
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop());
+    } catch {
+      setPermDenied(true);
+      setTimeout(() => setPermDenied(false), 5000);
       return;
     }
 
@@ -44,8 +55,7 @@ export default function MapSearchBar({ value, onChange, onSearch, onClear }: Map
       if (live) onChangeRef.current(live);
     };
 
-    rec.onerror = (e: any) => {
-      if (e.error === "not-allowed") alert("마이크 사용 권한을 허용해 주세요.");
+    rec.onerror = () => {
       setIsListening(false);
       if (recRef.current === rec) recRef.current = null;
     };
@@ -93,23 +103,34 @@ export default function MapSearchBar({ value, onChange, onSearch, onClear }: Map
           ✕
         </button>
       )}
-      <button
-        onClick={isListening ? stopListening : startListening}
-        title={isListening ? "음성 입력 중지" : "음성으로 검색"}
-        className={`shrink-0 border-none cursor-pointer transition-all flex items-center justify-center rounded-full w-7 h-7 ${
-          isListening
-            ? "bg-red-500 animate-pulse"
-            : "bg-transparent text-text-muted hover:text-brand"
-        }`}
-      >
-        {isListening ? (
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
-            <rect x="4" y="4" width="16" height="16" rx="2" />
-          </svg>
-        ) : (
-          <span className="text-sm">🎤</span>
+
+      {/* 마이크 버튼 + 권한 거부 툴팁 */}
+      <div className="relative shrink-0">
+        {permDenied && (
+          <div className="absolute bottom-full right-0 mb-2 z-50 bg-gray-900 text-white text-[11px] rounded-xl px-3 py-2 whitespace-nowrap shadow-lg leading-relaxed">
+            마이크 권한이 차단되어 있어요.
+            <br />
+            주소창 🔒 → <strong>마이크 → 허용</strong>
+            <span className="absolute top-full right-3 border-4 border-transparent border-t-gray-900" />
+          </div>
         )}
-      </button>
+        <button
+          onClick={isListening ? stopListening : startListening}
+          title={isListening ? "음성 입력 중지" : "음성으로 검색"}
+          className={`border-none cursor-pointer transition-all flex items-center justify-center rounded-full w-7 h-7 ${
+            isListening ? "bg-red-500 animate-pulse" : "bg-transparent text-text-muted hover:text-brand"
+          }`}
+        >
+          {isListening ? (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
+              <rect x="4" y="4" width="16" height="16" rx="2" />
+            </svg>
+          ) : (
+            <span className="text-sm">🎤</span>
+          )}
+        </button>
+      </div>
+
       <button
         onClick={onSearch}
         className="w-8 h-8 rounded-full bg-brand text-white text-xs flex items-center justify-center border-none cursor-pointer hover:opacity-80 transition-opacity shrink-0"
