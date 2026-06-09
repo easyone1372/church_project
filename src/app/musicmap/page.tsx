@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Header from "@/components/organisms/Header";
-import { MOCK_RESULTS, SearchResultItem } from "@/data/sampleMockResults";
-import { DUMMY_COORDS } from "@/data/MapdummyCoords";
+import type { SearchResultItem, PostDraft } from "@/data/sampleMockResults";
 import { CATEGORIES, CATEGORY_TAG_MAP } from "@/data/Categories";
 import { REGION_CENTERS } from "@/data/mapConstants";
 import {
@@ -27,41 +27,63 @@ declare global {
 
 export default function MusicMapPage() {
   const router = useRouter();
+  const { status: authStatus } = useSession();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapObjRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
-  const coordsRef = useRef<CoordsMap>({ ...DUMMY_COORDS });
+  const coordsRef = useRef<CoordsMap>({});
 
-  const [customPosts, setCustomPosts] = useState<SearchResultItem[]>([]);
+  const [allPosts, setAllPosts] = useState<SearchResultItem[]>([]);
   const [writeModalOpen, setWriteModalOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
-  const [filteredItems, setFilteredItems] =
-    useState<SearchResultItem[]>(MOCK_RESULTS);
+  const [filteredItems, setFilteredItems] = useState<SearchResultItem[]>([]);
   const [panelOpen, setPanelOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<SearchResultItem | null>(
-    null,
-  );
+  const [selectedItem, setSelectedItem] = useState<SearchResultItem | null>(null);
   const [chipFilter, setChipFilter] = useState("all");
 
-  const filteredItemsRef = useRef<SearchResultItem[]>(MOCK_RESULTS);
+  const filteredItemsRef = useRef<SearchResultItem[]>([]);
   filteredItemsRef.current = filteredItems;
 
-  /* ── URL 필터 (레슨/마켓 페이지 리다이렉트 처리) ── */
+  /* ── DB에서 게시글 로드 ── */
+  useEffect(() => {
+    fetch("/api/posts")
+      .then((r) => r.json())
+      .then((posts: SearchResultItem[]) => {
+        if (!Array.isArray(posts)) return;
+        // 좌표 맵 초기화
+        const coords: CoordsMap = {};
+        posts.forEach((post) => {
+          if (post.lat && post.lng) {
+            coords[post.id] = { lat: post.lat, lng: post.lng };
+          } else {
+            // 좌표 없으면 위치명으로 추정
+            coords[post.id] = coordsFromLocation(post.location, post.id);
+          }
+        });
+        coordsRef.current = coords;
+        setAllPosts(posts);
+        setFilteredItems(posts);
+        filteredItemsRef.current = posts;
+        if (mapObjRef.current) renderMarkers(posts, mapObjRef.current);
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ── URL 필터 ── */
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const filter = params.get("filter");
-    if (!filter) return;
+    if (!filter || allPosts.length === 0) return;
 
-    const allItems = [...MOCK_RESULTS, ...customPosts];
-    const filtered = allItems.filter((item) => item.tags.includes(filter));
+    const filtered = allPosts.filter((item) => item.tags.includes(filter));
     if (filtered.length > 0) {
       setFilteredItems(filtered);
       filteredItemsRef.current = filtered;
     }
     const label = CATEGORIES.find((c) => c.id === filter)?.label;
     if (label) setSearchInput(label);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [allPosts]);
 
   /* ── 마커 렌더링 ── */
   const renderMarkers = useCallback((items: SearchResultItem[], map: any) => {
@@ -81,10 +103,7 @@ export default function MusicMapPage() {
         map,
         icon: {
           content,
-          anchor: new window.naver.maps.Point(
-            isCluster ? 22 : 0,
-            isCluster ? 22 : 0,
-          ),
+          anchor: new window.naver.maps.Point(isCluster ? 22 : 0, isCluster ? 22 : 0),
         },
       });
 
@@ -105,10 +124,7 @@ export default function MusicMapPage() {
   /* ── 지도 초기화 ── */
   const initMap = useCallback(() => {
     if (!mapRef.current || mapObjRef.current) return;
-    if (!window.naver?.maps?.Map) {
-      setTimeout(initMap, 100);
-      return;
-    }
+    if (!window.naver?.maps?.Map) { setTimeout(initMap, 100); return; }
 
     const map = new window.naver.maps.Map(mapRef.current, {
       center: new window.naver.maps.LatLng(37.5563, 126.9236),
@@ -159,52 +175,59 @@ export default function MusicMapPage() {
     document.head.appendChild(script);
   }, [initMap]);
 
-  /* ── 새 글 등록 ── */
-  const handlePostSubmit = (item: Omit<SearchResultItem, "id">) => {
-    const id = Date.now();
-    const newPost: SearchResultItem = { ...item, id };
+  /* ── 새 글 등록 (DB 저장) ── */
+  const handlePostSubmit = (draft: PostDraft) => {
+    const savePost = async (lat: number, lng: number) => {
+      try {
+        const res = await fetch("/api/posts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...draft, lat, lng }),
+        });
+        if (!res.ok) return;
+        const newPost: SearchResultItem = await res.json();
 
-    const addToMap = (lat: number, lng: number) => {
-      coordsRef.current[id] = { lat, lng };
-      const updated = [...filteredItemsRef.current, newPost];
-      setCustomPosts((prev) => [...prev, newPost]);
-      setFilteredItems(updated);
-      filteredItemsRef.current = updated;
-      setPanelOpen(true);
-      if (mapObjRef.current) {
-        renderMarkers(updated, mapObjRef.current);
-        mapObjRef.current.panTo(new window.naver.maps.LatLng(lat, lng));
-      }
+        coordsRef.current[newPost.id] = { lat, lng };
+        const updated = [...filteredItemsRef.current, newPost];
+        setAllPosts((prev) => [...prev, newPost]);
+        setFilteredItems(updated);
+        filteredItemsRef.current = updated;
+        setPanelOpen(true);
+        if (mapObjRef.current) {
+          renderMarkers(updated, mapObjRef.current);
+          mapObjRef.current.panTo(new window.naver.maps.LatLng(lat, lng));
+        }
+      } catch {}
     };
 
-    if (item.lat && item.lng) {
-      addToMap(item.lat, item.lng);
+    if (draft.lat && draft.lng) {
+      savePost(draft.lat, draft.lng);
       return;
     }
 
     if (window.naver?.maps?.Service) {
       window.naver.maps.Service.geocode(
-        { query: item.location },
+        { query: draft.location },
         (status: any, response: any) => {
           if (
             status === window.naver.maps.Service.Status.OK &&
             response.v2.addresses.length > 0
           ) {
             const { x, y } = response.v2.addresses[0];
-            addToMap(parseFloat(y), parseFloat(x));
+            savePost(parseFloat(y), parseFloat(x));
           } else {
-            const approx = coordsFromLocation(item.location, id);
-            addToMap(approx.lat, approx.lng);
+            const approx = coordsFromLocation(draft.location, Date.now());
+            savePost(approx.lat, approx.lng);
           }
         },
       );
     } else {
-      const approx = coordsFromLocation(item.location, id);
-      addToMap(approx.lat, approx.lng);
+      const approx = coordsFromLocation(draft.location, Date.now());
+      savePost(approx.lat, approx.lng);
     }
   };
 
-  /* ── 칩 필터 적용 헬퍼 ── */
+  /* ── 칩 필터 ── */
   const applyChipFilter = (items: SearchResultItem[], chip: string) =>
     chip === "all"
       ? items
@@ -212,11 +235,9 @@ export default function MusicMapPage() {
           (CATEGORY_TAG_MAP[chip] ?? []).some((tag) => item.tags.includes(tag)),
         );
 
-  /* ── 칩 필터 변경 ── */
   const handleChipFilter = (categoryId: string) => {
     setChipFilter(categoryId);
-    const allItems = [...MOCK_RESULTS, ...customPosts];
-    const result = applyChipFilter(allItems, categoryId);
+    const result = applyChipFilter(allPosts, categoryId);
     setFilteredItems(result);
     filteredItemsRef.current = result;
     setSelectedItem(null);
@@ -226,10 +247,7 @@ export default function MusicMapPage() {
   /* ── 검색 ── */
   const handleSearch = () => {
     const q = searchInput.trim().toLowerCase();
-    const allItems = applyChipFilter(
-      [...MOCK_RESULTS, ...customPosts],
-      chipFilter,
-    );
+    const base = applyChipFilter(allPosts, chipFilter);
     const tokens = extractKeywords(q);
 
     const matchesToken = (item: SearchResultItem, token: string) =>
@@ -239,8 +257,8 @@ export default function MusicMapPage() {
       item.locationTags.some((lt) => lt.toLowerCase().includes(token));
 
     const result = tokens.length
-      ? allItems.filter((item) => tokens.every((t) => matchesToken(item, t)))
-      : allItems;
+      ? base.filter((item) => tokens.every((t) => matchesToken(item, t)))
+      : base;
 
     setFilteredItems(result);
     filteredItemsRef.current = result;
@@ -268,9 +286,7 @@ export default function MusicMapPage() {
             response.v2.addresses.length > 0
           ) {
             const { x, y } = response.v2.addresses[0];
-            mapObjRef.current?.setCenter(
-              new window.naver.maps.LatLng(parseFloat(y), parseFloat(x)),
-            );
+            mapObjRef.current?.setCenter(new window.naver.maps.LatLng(parseFloat(y), parseFloat(x)));
             mapObjRef.current?.setZoom(14);
           }
         },
@@ -281,30 +297,25 @@ export default function MusicMapPage() {
   };
 
   const handleClear = () => {
-    const allItems = applyChipFilter(
-      [...MOCK_RESULTS, ...customPosts],
-      chipFilter,
-    );
+    const result = applyChipFilter(allPosts, chipFilter);
     setSearchInput("");
-    setFilteredItems(allItems);
-    filteredItemsRef.current = allItems;
+    setFilteredItems(result);
+    filteredItemsRef.current = result;
     setSelectedItem(null);
     setPanelOpen(false);
-    if (mapObjRef.current) renderMarkers(allItems, mapObjRef.current);
+    if (mapObjRef.current) renderMarkers(result, mapObjRef.current);
   };
 
   const handleItemClick = (item: SearchResultItem) => {
     setSelectedItem(item);
     const coords = coordsRef.current[item.id];
     if (coords && mapObjRef.current) {
-      mapObjRef.current.panTo(
-        new window.naver.maps.LatLng(coords.lat, coords.lng),
-      );
+      mapObjRef.current.panTo(new window.naver.maps.LatLng(coords.lat, coords.lng));
     }
   };
 
   return (
-    <div className="flex flex-col flex-1">
+    <div className="flex flex-col flex-1 overflow-hidden">
       <Header />
       <div className="relative flex-1">
         <div ref={mapRef} className="w-full h-full" />
@@ -318,8 +329,8 @@ export default function MusicMapPage() {
 
         {/* 카테고리 필터 칩 바 */}
         <div
-          className="absolute z-10 left-4 flex gap-1.5"
-          style={{ top: "72px" }}
+          className="absolute z-10 left-4 right-16 md:right-auto flex gap-1.5 overflow-x-auto"
+          style={{ top: "72px", scrollbarWidth: "none" }}
         >
           {[
             { id: "all",        label: "전체" },
@@ -342,7 +353,7 @@ export default function MusicMapPage() {
                 mapObjRef.current.panTo(new window.naver.maps.LatLng(lat, lng));
                 mapObjRef.current.setZoom(15);
               },
-              () => alert("위치 정보를 가져올 수 없어요."),
+              () => {},
               { timeout: 5000 },
             );
           }}
@@ -357,7 +368,13 @@ export default function MusicMapPage() {
         </button>
 
         <button
-          onClick={() => setWriteModalOpen(true)}
+          onClick={() => {
+            if (authStatus !== "authenticated") {
+              alert("글을 작성하려면 로그인이 필요해요.");
+              return;
+            }
+            setWriteModalOpen(true);
+          }}
           className="absolute bottom-6 right-6 z-10 flex items-center gap-2 bg-brand text-white text-xs font-semibold px-4 rounded-full border-none cursor-pointer hover:opacity-85 transition-opacity shadow-search"
           style={{ height: "44px" }}
         >
@@ -370,10 +387,7 @@ export default function MusicMapPage() {
           selectedItem={selectedItem}
           onItemClick={handleItemClick}
           onBackToList={() => setSelectedItem(null)}
-          onClose={() => {
-            setPanelOpen(false);
-            setSelectedItem(null);
-          }}
+          onClose={() => { setPanelOpen(false); setSelectedItem(null); }}
           onDetailClick={(item) => router.push(`/post/${item.id}`)}
         />
       </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { SearchResultItem } from "@/data/sampleMockResults";
 import { WRITE_CATEGORIES } from "@/data/Categories";
 import CategorySelector from "@/components/molecules/CategorySelector";
 import ImagePicker from "@/components/molecules/ImagePicker";
@@ -12,11 +11,13 @@ import RpTextarea from "@/components/atom/RpTextarea";
 import Field from "@/components/atom/Field";
 import { ALL_KEYWORDS } from "@/data/sampleMockResults";
 import { PRICE_TYPES, generatePriceDisplay } from "@/data/postOptions";
+import { getDirectionLabels } from "@/data/Categories";
+import type { PostDraft, PostDirection } from "@/data/sampleMockResults";
 
 interface WritePostModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (item: Omit<SearchResultItem, "id">) => void;
+  onSubmit: (draft: PostDraft) => void;
 }
 
 export default function WritePostModal({
@@ -27,6 +28,7 @@ export default function WritePostModal({
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(
     new Set(["lesson"]),
   );
+  const [direction, setDirection] = useState<PostDirection>("offer");
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
   const [priceType, setPriceType] = useState<string>("monthly");
@@ -64,19 +66,21 @@ export default function WritePostModal({
 
     onSubmit({
       title: title.trim(),
-      category: selected.map((c) => c.label).join(" · "),
       location: location.trim(),
       locationTags: [...new Set(locationTags)],
-      timeAgo: "방금 전",
-      price: generatePriceDisplay(priceType, priceAmount),
+      priceType,
+      priceAmount,
+      priceDisplay: generatePriceDisplay(priceType, priceAmount),
       imageEmoji: emoji,
       imageUrl: iconMode === "image" && imageUrl ? imageUrl : undefined,
       tags,
       keywords,
       description: description.trim() || undefined,
+      direction,
     });
 
     setSelectedCategories(new Set(["lesson"]));
+    setDirection("offer");
     setTitle("");
     setLocation("");
     setPriceType("monthly");
@@ -96,15 +100,15 @@ export default function WritePostModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
       style={{ background: "rgba(0,0,0,0.45)" }}
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl w-full mx-4 flex flex-col"
+        className="bg-white w-full mx-0 sm:mx-4 sm:rounded-2xl flex flex-col rounded-t-2xl mt-auto sm:mt-0"
         style={{
           maxWidth: "440px",
-          maxHeight: "90vh",
+          maxHeight: "92vh",
           boxShadow: "0 24px 64px rgba(15,23,42,0.18)",
         }}
         onClick={(e) => e.stopPropagation()}
@@ -129,6 +133,37 @@ export default function WritePostModal({
               selected={selectedCategories}
               onToggle={toggleCategory}
             />
+          </Field>
+
+          <Field label="글 유형" required>
+            {(() => {
+              const { offer, seek } = getDirectionLabels(selectedCategories);
+              return (
+                <div className="flex gap-2">
+                  {(
+                    [
+                      { value: "offer" as PostDirection, label: offer },
+                      { value: "seek"  as PostDirection, label: seek  },
+                    ]
+                  ).map(({ value, label }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setDirection(value)}
+                      className={`flex-1 py-2 rounded-xl text-[13px] font-semibold border cursor-pointer transition-colors ${
+                        direction === value
+                          ? value === "seek"
+                            ? "bg-sky-500 text-white border-sky-500"
+                            : "bg-brand text-white border-brand"
+                          : "bg-white text-text-muted border-border-base hover:border-brand"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
           </Field>
 
           <Field label="제목" required>

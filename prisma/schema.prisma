@@ -11,8 +11,7 @@ datasource db {
 
 model User {
   id        Int      @id @default(autoincrement())
-  email     String   @unique @db.VarChar(255)
-  password  String   @db.VarChar(255)
+  email     String?  @unique @db.VarChar(255) // OAuth 제공자에 따라 없을 수 있음
   name      String   @db.VarChar(50)
   nickname  String?  @db.VarChar(50)
   phone     String?  @db.VarChar(20)
@@ -21,12 +20,31 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  oauthAccounts    OAuthAccount[]
   posts            Post[]
   comments         Comment[]
   likes            Like[]
   bookmarks        Bookmark[]
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
+}
+
+// ── OAuth 계정 연동 ──────────────────────────────────────────────────────
+
+model OAuthAccount {
+  id                String   @id @default(cuid())
+  provider          String   @db.VarChar(20)   // "kakao" | "naver"
+  providerAccountId String   @db.VarChar(100)
+  accessToken       String?  @db.Text
+  refreshToken      String?  @db.Text
+  expiresAt         Int?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
 }
 
 // ── 카테고리 ─────────────────────────────────────────────────────────────
@@ -74,21 +92,27 @@ enum PostStatus {
   DELETED
 }
 
+enum PostDirection {
+  OFFER // 합니다 / 팝니다
+  SEEK  // 구합니다 / 삽니다
+}
+
 model Post {
-  id           Int        @id @default(autoincrement())
-  title        String     @db.VarChar(100)
-  description  String?    @db.Text
-  priceType    PriceType  @default(NEGOTIABLE)
-  priceAmount  Int?                            // 원 단위 숫자 (무료/협의면 null)
-  priceDisplay String     @db.VarChar(100)     // 표시용 "월 120,000원"
-  imageEmoji   String     @db.VarChar(10)
-  location     String     @db.VarChar(100)     // 표시용 "마포구"
+  id           Int           @id @default(autoincrement())
+  title        String        @db.VarChar(100)
+  description  String?       @db.Text
+  priceType    PriceType     @default(NEGOTIABLE)
+  priceAmount  Int?                               // 원 단위 숫자 (무료/협의면 null)
+  priceDisplay String        @db.VarChar(100)     // 표시용 "월 120,000원"
+  imageEmoji   String        @db.VarChar(10)
+  location     String        @db.VarChar(100)     // 표시용 "마포구"
   lat          Float?
   lng          Float?
-  status       PostStatus @default(PUBLISHED)
-  viewCount    Int        @default(0)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  direction    PostDirection @default(OFFER)
+  status       PostStatus    @default(PUBLISHED)
+  viewCount    Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   authorId Int
   author   User @relation(fields: [authorId], references: [id])

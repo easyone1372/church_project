@@ -62,3 +62,19 @@ export interface WriteCategory extends Category {
 export const WRITE_CATEGORIES: WriteCategory[] = CATEGORIES.filter(
   (c) => !["all", "record", "etc"].includes(c.id),
 ).map((c) => ({ ...c, tags: CATEGORY_TAG_MAP[c.id] ?? [c.id] }));
+
+// 악기거래/장비 계열 카테고리 (direction label 결정용)
+const SELL_CAT_IDS = new Set(["instrument", "dj", "equipment", "record"]);
+
+export function getDirectionLabels(selectedCategories: Set<string>) {
+  if (selectedCategories.size === 0)
+    return { offer: "합니다·팝니다", seek: "구합니다·삽니다" };
+
+  const cats = [...selectedCategories];
+  const allSell  = cats.every((id) => SELL_CAT_IDS.has(id));
+  const allOther = cats.every((id) => !SELL_CAT_IDS.has(id));
+
+  if (allSell)  return { offer: "팝니다", seek: "삽니다" };
+  if (allOther) return { offer: "합니다", seek: "구합니다" };
+  return { offer: "합니다·팝니다", seek: "구합니다·삽니다" };
+}

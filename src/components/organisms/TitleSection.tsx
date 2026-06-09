@@ -25,9 +25,8 @@ export default function TitleSection({ onSearch }: TitleSectionProps) {
       }}
     >
       <h1
-        className={`m-0 font-bold leading-snug ${anim.fadeUp}`}
+        className={`m-0 font-bold leading-snug text-[32px] sm:text-[46px] md:text-[58px] lg:text-[64px] ${anim.fadeUp}`}
         style={{
-          fontSize: "64px",
           letterSpacing: "-2.5px",
           color: "var(--color-text-primary)",
           animationDelay: "80ms",
@@ -38,7 +37,7 @@ export default function TitleSection({ onSearch }: TitleSectionProps) {
       </h1>
 
       <p
-        className={`mt-6 text-[22px] ${anim.fadeUp}`}
+        className={`mt-4 sm:mt-6 text-[15px] sm:text-[18px] md:text-[22px] ${anim.fadeUp}`}
         style={{
           marginBottom: "var(--mb-hero-desc)",
           color: "var(--color-text-muted)",

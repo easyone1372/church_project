@@ -13,8 +13,8 @@ export default function MapSearchBar({
 }: MapSearchBarProps) {
   return (
     <div
-      className="absolute z-10 top-4 left-4 flex items-center gap-2 bg-white rounded-full shadow-search px-4 border border-border-base"
-      style={{ height: "48px", minWidth: "320px", maxWidth: "420px" }}
+      className="absolute z-10 top-4 left-4 right-4 md:right-auto flex items-center gap-2 bg-white rounded-full shadow-search px-4 border border-border-base"
+      style={{ height: "48px", maxWidth: "420px" }}
     >
       <span className="text-sm font-bold text-brand shrink-0">✦</span>
       <input

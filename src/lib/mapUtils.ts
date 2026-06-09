@@ -1,4 +1,4 @@
-import { MOCK_RESULTS, SearchResultItem } from "@/data/sampleMockResults";
+import type { SearchResultItem } from "@/data/sampleMockResults";
 import { REGION_CENTERS } from "@/data/mapConstants";
 
 export type CoordsMap = Record<number, { lat: number; lng: number }>;
@@ -99,26 +99,17 @@ export function coordsFromLocation(
   return { lat: base.lat + offset, lng: base.lng + offset };
 }
 
+// 한국어 조사 및 어미를 제거한 검색 토큰 추출
 export function extractKeywords(query: string): string[] {
-  const WORD_END_PARTICLES =
+  const PARTICLES =
     /(에서도|에서는|에서만|에서|에게서|에게|한테서|한테|으로부터|으로서|으로|이라고|이라는|이라서|이랑|이라도|이라면|이지만|하고서|하고|랑|와|과|의|을|를|은|는|이|가|도|만|까지|부터|보다|처럼|같이)$/;
 
-  const tokens = query
+  return query
     .replace(
       /하고\s*싶어요?|하고\s*싶다|싶어요?|싶다|해\s*줘요?|해요|합니다|주세요|알려줘|찾아줘|있나요?|있어요?|있습니다?|있어|할게요|할까요|하나요|인가요?/g,
       " ",
     )
     .split(/\s+/)
-    .map((word) => word.replace(WORD_END_PARTICLES, "").trim())
+    .map((word) => word.replace(PARTICLES, "").trim())
     .filter((token) => token.length >= 2);
-
-  return tokens.filter((token) =>
-    MOCK_RESULTS.some(
-      (item) =>
-        item.title.toLowerCase().includes(token) ||
-        item.category.toLowerCase().includes(token) ||
-        item.keywords.some((kw) => kw.toLowerCase().includes(token)) ||
-        item.locationTags.some((lt) => lt.toLowerCase().includes(token)),
-    ),
-  );
 }

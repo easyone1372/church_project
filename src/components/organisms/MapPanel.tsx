@@ -21,14 +21,7 @@ export default function MapPanel({
   onDetailClick,
 }: MapPanelProps) {
   return (
-    <div
-      className="absolute top-0 right-0 h-full bg-white shadow-2xl z-20 flex flex-col overflow-hidden"
-      style={{
-        width: "360px",
-        transform: isOpen ? "translateX(0)" : "translateX(100%)",
-        transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-      }}
-    >
+    <div className={`map-panel-responsive${isOpen ? "" : " panel-closed"}`}>
       {/* 패널 헤더 */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-border-header bg-white shrink-0">
         <div>

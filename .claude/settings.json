@@ -12,10 +12,26 @@
       "PowerShell(New-Item -ItemType Directory -Path \"d:\\\\church_project\\\\prisma\\\\migrations\\\\20260606000000_hashtag_and_comment\" -Force)",
       "Bash(mkdir -p d:/church_project/src/app/api/posts/[id]/comments)",
       "Bash(npx tsc *)",
-      "PowerShell(New-Item -ItemType Directory -Path \"d:\\\\church_project\\\\prisma\\\\migrations\\\\20260606010000_user_nickname\" -Force)"
+      "PowerShell(New-Item -ItemType Directory -Path \"d:\\\\church_project\\\\prisma\\\\migrations\\\\20260606010000_user_nickname\" -Force)",
+      "Bash(npm list *)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('version','not found'\\)\\)\")",
+      "Bash(node -e \"const p = require\\('./node_modules/next-auth/package.json'\\); console.log\\(p.version\\)\")",
+      "Bash(node -e \"const k = require\\('./node_modules/next-auth/providers/kakao'\\); console.log\\(Object.keys\\(k\\)\\)\")",
+      "PowerShell(New-Item -ItemType Directory -Path \"d:\\\\church_project\\\\prisma\\\\migrations\\\\20260606020000_oauth_auth\" -Force)",
+      "Bash(node -e \"const crypto = require\\('crypto'\\); console.log\\(crypto.randomBytes\\(32\\).toString\\('hex'\\)\\)\")",
+      "Bash(mkdir -p d:/church_project/src/types && mkdir -p d:/church_project/src/app/api/auth/[...nextauth])",
+      "Bash(mkdir \"d:\\\\church_project\\\\src\\\\app\\\\api\\\\bookmarks\\\\[postId]\" 2>nul; echo done)",
+      "Bash(mkdir \"d:\\\\church_project\\\\src\\\\app\\\\api\\\\posts\\\\[id]\\\\comments\\\\[commentId]\" 2>nul; echo done)",
+      "Bash(findstr -i \"blob\\\\|cloudinary\\\\|upload\\\\|multer\\\\|sharp\")",
+      "Bash(mkdir \"d:\\\\church_project\\\\src\\\\app\\\\api\\\\upload\")",
+      "Bash(mkdir \"d:\\\\church_project\\\\src\\\\app\\\\api\\\\upload\\\\avatar\")",
+      "Bash(node -e \"const b = require\\('@vercel/blob'\\); console.log\\(Object.keys\\(b\\).filter\\(k => ['put','del','list'].includes\\(k\\)\\)\\)\")"
     ],
     "additionalDirectories": [
-      "d:\\church_project\\src\\app\\api\\posts\\[id]"
+      "d:\\church_project\\src\\app\\api\\posts\\[id]",
+      "d:\\church_project\\src\\app\\api\\auth",
+      "d:\\church_project\\src\\app\\api\\bookmarks",
+      "d:\\church_project\\src\\app\\api\\posts\\[id]\\comments"
     ]
   }
 }
