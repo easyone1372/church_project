@@ -62,7 +62,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         user.id = String(newUser.id);
         return true;
-      } catch {
+      } catch (err) {
+        console.error("[auth] signIn error:", err);
         return false;
       }
     },
