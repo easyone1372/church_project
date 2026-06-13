@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import FilterChip from "@/components/atom/FilterChip";
 import PriceRangeSlider from "@/components/molecules/PriceRangeSlider";
+import LocationPicker from "@/components/molecules/LocationPicker";
 import { MAIN_CATEGORIES, INSTRUMENT_SUBCATS, SUBCATS_VISIBLE } from "@/data/Categories";
 import { PRICE_RANGES, SLIDER_MAX } from "@/data/postOptions";
 
@@ -13,14 +14,16 @@ interface Props {
   onMainCatChange: (id: string) => void;
   subCats: Set<string>;
   onToggleSubCat: (id: string) => void;
-  location: string;
-  onLocationChange: (v: string) => void;
+  locationLabel: string;
+  onLocationSelect: (filterVal: string, label: string) => void;
+  onLocationClear: () => void;
   sort: SortOption;
   onSortChange: (s: SortOption) => void;
   priceRange: [number, number];
   onPriceRangeChange: (r: [number, number]) => void;
   showSlider: boolean;
   onToggleSlider: () => void;
+  onReSearch: () => void;
 }
 
 const SORT_OPTIONS: { id: SortOption; label: string }[] = [
@@ -32,10 +35,11 @@ const SORT_OPTIONS: { id: SortOption; label: string }[] = [
 export default function SearchFilterBar({
   mainCatId, onMainCatChange,
   subCats, onToggleSubCat,
-  location, onLocationChange,
+  locationLabel, onLocationSelect, onLocationClear,
   sort, onSortChange,
   priceRange, onPriceRangeChange,
   showSlider, onToggleSlider,
+  onReSearch,
 }: Props) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -50,7 +54,7 @@ export default function SearchFilterBar({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const currentCat = MAIN_CATEGORIES.find(c => c.id === mainCatId) ?? MAIN_CATEGORIES[0];
+  const currentCat = MAIN_CATEGORIES.find((c) => c.id === mainCatId) ?? MAIN_CATEGORIES[0];
   const showSubs = SUBCATS_VISIBLE.has(mainCatId);
 
   const isChipActive = (min: number, max: number) => {
@@ -67,7 +71,7 @@ export default function SearchFilterBar({
     <div className="border-b border-border-header bg-white">
       <div className="mx-auto px-3 sm:px-6 py-3 flex flex-col gap-3" style={{ maxWidth: "var(--max-w-hero)" }}>
 
-        {/* Row 1: 카테고리 드롭다운 + 위치 + 정렬 */}
+        {/* Row 1: 카테고리 + 지역 + 정렬 */}
         <div className="flex flex-wrap items-center gap-2">
 
           {/* 카테고리 드롭다운 */}
@@ -107,20 +111,12 @@ export default function SearchFilterBar({
             )}
           </div>
 
-          {/* 위치 입력 */}
-          <div className="flex items-center gap-1 h-9 px-3 rounded-full border border-border-base bg-white focus-within:border-brand transition-colors">
-            <span className="text-[13px] text-text-muted">📍</span>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => onLocationChange(e.target.value)}
-              placeholder="지역 입력 (예: 홍대, 강남)"
-              className="border-none outline-none text-[13px] text-text-body bg-transparent w-36 placeholder:text-text-placeholder"
-            />
-            {location && (
-              <button onClick={() => onLocationChange("")} className="text-text-muted hover:text-text-body border-none bg-transparent cursor-pointer text-xs">✕</button>
-            )}
-          </div>
+          {/* 지역 선택 */}
+          <LocationPicker
+            label={locationLabel}
+            onSelect={onLocationSelect}
+            onClear={onLocationClear}
+          />
 
           {/* 정렬 */}
           <div className="flex gap-1 ml-auto">
@@ -172,6 +168,16 @@ export default function SearchFilterBar({
               <PriceRangeSlider value={priceRange} onChange={onPriceRangeChange} />
             </div>
           )}
+        </div>
+
+        {/* Row 4: 이 조건으로 검색 */}
+        <div className="flex justify-end">
+          <button
+            onClick={onReSearch}
+            className="h-9 px-5 rounded-full text-[13px] font-semibold bg-brand text-white border-none cursor-pointer hover:opacity-85 transition-opacity whitespace-nowrap"
+          >
+            이 조건으로 검색
+          </button>
         </div>
       </div>
     </div>

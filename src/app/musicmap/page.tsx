@@ -297,8 +297,8 @@ export default function MusicMapPage() {
         {showAreaSearch && (
           <button
             onClick={handleAreaSearch}
-            className="absolute z-10 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-white text-text-body text-xs font-semibold px-4 rounded-full border border-border-base shadow-search cursor-pointer hover:bg-surface-card transition-colors"
-            style={{ top: "112px", height: "36px" }}
+            className="absolute z-10 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-white text-text-body text-xs font-semibold px-4 rounded-full border border-border-base shadow-search cursor-pointer hover:bg-surface-card transition-colors top-4"
+            style={{ height: "36px" }}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />

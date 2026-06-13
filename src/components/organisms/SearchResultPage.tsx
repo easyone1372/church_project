@@ -28,6 +28,7 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
   const [mainCatId, setMainCatId] = useState("all");
   const [subCats, setSubCats] = useState<Set<string>>(new Set());
   const [location, setLocation] = useState("");
+  const [locationLabel, setLocationLabel] = useState("전국");
   const [sort, setSort] = useState<SortOption>("latest");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, SLIDER_MAX]);
   const [showSlider, setShowSlider] = useState(false);
@@ -41,12 +42,12 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
     if (q.trim()) onBack(q);
   };
 
-  useEffect(() => {
+  const fetchResults = (apiQuery: string) => {
     setLoading(true);
     fetch("/api/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: initialQuery }),
+      body: JSON.stringify({ query: apiQuery }),
     })
       .then((r) => r.json())
       .then((data) => {
@@ -55,7 +56,27 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
       })
       .catch(() => { setResults([]); setSuggestions([]); })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchResults(initialQuery);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery]);
+
+  const handleLocationSelect = (filterVal: string, label: string) => {
+    setLocation(filterVal);
+    setLocationLabel(label || "전국");
+  };
+
+  const handleLocationClear = () => {
+    setLocation("");
+    setLocationLabel("전국");
+  };
+
+  const handleReSearch = () => {
+    const combined = [query.trim(), location.trim()].filter(Boolean).join(" ");
+    fetchResults(combined || initialQuery);
+  };
 
   const toggleSubCat = (id: string) => {
     setSubCats((prev) => {
@@ -74,25 +95,21 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
 
   const filtered = results
     .filter((item) => {
-      // 메인 카테고리 필터
       if (mainCatId !== "all" && selectedCat) {
         if (selectedCat.tag && !item.tags.includes(selectedCat.tag)) return false;
         if (selectedCat.direction && item.direction !== selectedCat.direction) return false;
       }
 
-      // 악기 세부 카테고리 필터 (OR — 하나라도 매치)
       if (subCats.size > 0) {
         const hasSubCat = [...subCats].some((s) => item.tags.includes(s));
         if (!hasSubCat) return false;
       }
 
-      // 위치 필터
       if (location.trim()) {
         const loc = location.trim().toLowerCase();
         if (!item.location.toLowerCase().includes(loc)) return false;
       }
 
-      // 가격 필터
       const [lo, hi] = priceRange;
       if (!(lo === 0 && hi === SLIDER_MAX)) {
         const amount = parsePrice(item.price);
@@ -108,18 +125,16 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
       if (sort === "price_low") {
         const pa = parsePrice(a.price); const pb = parsePrice(b.price);
         if (pa === -1 && pb === -1) return 0;
-        if (pa === -1) return 1;
-        if (pb === -1) return -1;
+        if (pa === -1) return 1; if (pb === -1) return -1;
         return pa - pb;
       }
       if (sort === "price_high") {
         const pa = parsePrice(a.price); const pb = parsePrice(b.price);
         if (pa === -1 && pb === -1) return 0;
-        if (pa === -1) return 1;
-        if (pb === -1) return -1;
+        if (pa === -1) return 1; if (pb === -1) return -1;
         return pb - pa;
       }
-      return 0; // latest: keep API order
+      return 0;
     });
 
   return (
@@ -138,14 +153,16 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
         onMainCatChange={handleMainCatChange}
         subCats={subCats}
         onToggleSubCat={toggleSubCat}
-        location={location}
-        onLocationChange={setLocation}
+        locationLabel={locationLabel}
+        onLocationSelect={handleLocationSelect}
+        onLocationClear={handleLocationClear}
         sort={sort}
         onSortChange={setSort}
         priceRange={priceRange}
         onPriceRangeChange={setPriceRange}
         showSlider={showSlider}
         onToggleSlider={() => setShowSlider((v) => !v)}
+        onReSearch={handleReSearch}
       />
 
       {/* 결과 */}

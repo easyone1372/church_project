@@ -167,22 +167,22 @@ export default function MapPanel({
                 <li
                   key={item.id}
                   onClick={() => onItemClick(item)}
-                  className="flex gap-3 px-4 py-3 border-b border-border-header cursor-pointer hover:bg-surface-card transition-colors"
+                  className="flex gap-3 px-4 py-4 border-b border-border-header cursor-pointer hover:bg-surface-card transition-colors"
                 >
-                  <div className="w-11 h-11 rounded-xl bg-[#f1f5f9] flex items-center justify-center text-xl shrink-0 overflow-hidden">
+                  <div className="w-14 h-14 rounded-xl bg-[#f1f5f9] flex items-center justify-center text-2xl shrink-0 overflow-hidden">
                     {item.imageUrl ? (
                       <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
                     ) : (
                       item.imageEmoji
                     )}
                   </div>
-                  <div className="flex-1 min-w-0 flex flex-col gap-0.5 justify-center">
-                    <div className="flex items-center gap-1 flex-wrap">
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${tagChipCls(item.tags)}`}>
+                  <div className="flex-1 min-w-0 flex flex-col gap-1 justify-center">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${tagChipCls(item.tags)}`}>
                         {item.category}
                       </span>
                       <span
-                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                        className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                         style={{
                           color: item.direction === "seek" ? "#0ea5e9" : "#8F4BC6",
                           background: item.direction === "seek" ? "#e0f2fe" : "#f3e8ff",
@@ -191,8 +191,8 @@ export default function MapPanel({
                         {dirLabel(item.tags, item.direction)}
                       </span>
                     </div>
-                    <p className="text-[13px] font-semibold text-text-heading leading-snug truncate">{item.title}</p>
-                    <p className="text-[11px] text-text-muted">
+                    <p className="text-[14px] font-semibold text-text-heading leading-snug truncate">{item.title}</p>
+                    <p className="text-[12px] text-text-muted">
                       {item.price}
                       {dist !== null && (
                         <span className="ml-1.5 text-text-placeholder">· {fmtDist(dist)}</span>
