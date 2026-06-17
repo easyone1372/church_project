@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import FilterChip from "@/components/atom/FilterChip";
 import PriceRangeSlider from "@/components/molecules/PriceRangeSlider";
-import LocationPicker, { type LocationSelection } from "@/components/molecules/LocationPicker";
+import LocationPicker, { type LocationEntry } from "@/components/molecules/LocationPicker";
 import { MAIN_CATEGORIES, INSTRUMENT_SUBCATS, SUBCATS_VISIBLE } from "@/data/Categories";
 import { PRICE_RANGES, SLIDER_MAX } from "@/data/postOptions";
 
@@ -14,8 +14,8 @@ interface Props {
   onMainCatChange: (id: string) => void;
   subCats: Set<string>;
   onToggleSubCat: (id: string) => void;
-  locationSel: LocationSelection;
-  onLocationChange: (sel: LocationSelection) => void;
+  locationSel: LocationEntry[];
+  onLocationChange: (sel: LocationEntry[]) => void;
   sort: SortOption;
   onSortChange: (s: SortOption) => void;
   priceRange: [number, number];
@@ -114,7 +114,7 @@ export default function SearchFilterBar({
           <LocationPicker value={locationSel} onChange={onLocationChange} />
 
           {/* 정렬 */}
-          <div className="flex gap-1 ml-auto">
+          <div className="flex gap-1 sm:ml-auto">
             {SORT_OPTIONS.map(({ id, label }) => (
               <button
                 key={id}

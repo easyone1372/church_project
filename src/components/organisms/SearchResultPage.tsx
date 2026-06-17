@@ -9,7 +9,7 @@ import ResultItem from "@/components/atom/ResultItem";
 import SearchBar from "@/components/molecules/SearchBar";
 import type { SearchResultItem } from "@/data/sampleMockResults";
 import { MAIN_CATEGORIES, tagsAndDirToMainCatId } from "@/data/Categories";
-import { SLIDER_MAX, parsePrice } from "@/data/postOptions";
+import { SLIDER_MAX, NEGOTIABLE_PRICE, parsePrice } from "@/data/postOptions";
 import { useBookmarks } from "@/lib/useBookmarks";
 import { parseLocationFromQuery } from "@/lib/locationParser";
 import {
@@ -19,7 +19,7 @@ import {
   fmtDist,
   NEARBY_RADIUS_KM,
 } from "@/lib/nearbySearch";
-import type { LocationSelection } from "@/components/molecules/LocationPicker";
+import type { LocationEntry } from "@/components/molecules/LocationPicker";
 
 interface SearchResultPageProps {
   initialQuery: string;
@@ -27,15 +27,26 @@ interface SearchResultPageProps {
   onLogoClick: () => void;
 }
 
-const EMPTY_LOC: LocationSelection = { si: "", gu: "", dong: "" };
-
 type GeoState = "idle" | "requesting" | "ready" | "denied";
 
-function locTerms(sel: LocationSelection): string[] {
-  if (sel.dong) return [sel.si, sel.gu, sel.dong].filter(Boolean);
-  if (sel.gu)   return [sel.si, sel.gu].filter(Boolean);
-  if (sel.si)   return [sel.si];
-  return [];
+// "수원시" -> ["수원시", "수원"]처럼 "시"를 생략한 구어체 표기도 매칭 허용
+function wordVariants(word: string): string[] {
+  return word.endsWith("시") && word.length > 1 ? [word, word.slice(0, -1)] : [word];
+}
+
+// 선택 항목 하나를 "단어별 변형(AND 조건) 그룹" 배열로 분해 (예: "수원시 장안구" -> [["수원시","수원"], ["장안구"]])
+function entryTermGroups(e: LocationEntry): string[][] {
+  const parts = e.dong ? [e.si, e.gu, e.dong] : e.gu ? [e.si, e.gu] : e.si ? [e.si] : [];
+  return parts.filter(Boolean).flatMap((p) => p.split(" ")).map(wordVariants);
+}
+
+function entryMatches(combinedLower: string, e: LocationEntry): boolean {
+  return entryTermGroups(e).every((variants) => variants.some((v) => combinedLower.includes(v.toLowerCase())));
+}
+
+// 재검색 시 API에 붙일 가장 구체적인 지역명 (동 > 구 > 시)
+function mostSpecificLocLabel(e: LocationEntry): string {
+  return e.dong || e.gu || e.si || "";
 }
 
 export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: SearchResultPageProps) {
@@ -47,7 +58,7 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
 
   const [mainCatId, setMainCatId] = useState("all");
   const [subCats, setSubCats] = useState<Set<string>>(new Set());
-  const [locationSel, setLocationSel] = useState<LocationSelection>(EMPTY_LOC);
+  const [locationSel, setLocationSel] = useState<LocationEntry[]>([]);
   const [sort, setSort] = useState<SortOption>("latest");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, SLIDER_MAX]);
   const [showSlider, setShowSlider] = useState(false);
@@ -106,7 +117,7 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
 
     const parsed = parseLocationFromQuery(cleanedQuery);
     if (parsed) {
-      setLocationSel({ si: parsed.si, gu: parsed.gu, dong: parsed.dong });
+      setLocationSel([{ si: parsed.si, gu: parsed.gu, dong: parsed.dong }]);
       setQuery(parsed.restQuery);
       queryRef.current = parsed.restQuery;
     } else {
@@ -121,8 +132,7 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
   }, [initialQuery]);
 
   const handleReSearch = () => {
-    const terms = locTerms(locationSel);
-    const locVal = terms[terms.length - 1] ?? "";
+    const locVal = locationSel.map(mostSpecificLocLabel).filter(Boolean).join(" ");
     const combined = [queryRef.current.trim(), locVal].filter(Boolean).join(" ");
     fetchResults(combined || initialQuery);
   };
@@ -141,7 +151,6 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
   };
 
   const selectedCat = MAIN_CATEGORIES.find((c) => c.id === mainCatId);
-  const locationFilterTerms = locTerms(locationSel).map((t) => t.toLowerCase());
 
   // 근처 검색용 거리 계산 맵
   const distanceMap = new Map<number, number>();
@@ -165,9 +174,9 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
         if (!hasSubCat) return false;
       }
 
-      if (locationFilterTerms.length > 0) {
+      if (locationSel.length > 0) {
         const combined = [item.location, ...item.locationTags].join(" ").toLowerCase();
-        if (!locationFilterTerms.every((t) => combined.includes(t))) return false;
+        if (!locationSel.some((e) => entryMatches(combined, e))) return false;
       }
 
       // 근처 검색: 반경 이내만 통과
@@ -179,7 +188,11 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
       const [lo, hi] = priceRange;
       if (!(lo === 0 && hi === SLIDER_MAX)) {
         const amount = parsePrice(item.price);
-        if (amount !== -1) {
+        if (lo === NEGOTIABLE_PRICE && hi === NEGOTIABLE_PRICE) {
+          if (amount !== NEGOTIABLE_PRICE) return false;
+        } else if (amount === NEGOTIABLE_PRICE) {
+          return false; // 협의 게시글은 숫자 가격 필터에서 제외
+        } else {
           if (lo === 0 && hi === 0) { if (amount !== 0) return false; }
           else if (amount < lo || (hi < SLIDER_MAX && amount > hi)) return false;
         }

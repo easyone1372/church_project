@@ -13,10 +13,27 @@ function escape(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// "수원시" -> ["수원시", "수원"]처럼 "시"를 생략한 구어체 표기도 허용
+function wordVariants(word: string): string[] {
+  if (word.endsWith("시") && word.length > 1) return [word, word.slice(0, -1)];
+  return [word];
+}
+
+// term이 "수원시 장안구"처럼 여러 단어여도 각 단어(+변형)가 모두 쿼리에 있으면 매칭
+function termPresent(q: string, term: string): boolean {
+  if (!term) return true;
+  return term.split(" ").every((w) => wordVariants(w).some((v) => q.includes(v)));
+}
+
 function removeTerms(query: string, ...terms: string[]): string {
   let q = query;
   for (const t of terms) {
-    if (t) q = q.replace(new RegExp(escape(t), "g"), "");
+    if (!t) continue;
+    for (const w of t.split(" ")) {
+      for (const v of wordVariants(w)) {
+        q = q.replace(new RegExp(escape(v), "g"), "");
+      }
+    }
   }
   return q.replace(/\s+/g, " ").trim();
 }
@@ -49,9 +66,9 @@ export function parseLocationFromQuery(query: string): ParsedLocation | null {
 
   // 2) 구 매칭 — 쿼리에 시 이름도 함께 있는 경우 우선
   for (const siData of KOREA_LOCATIONS) {
-    if (!q.includes(siData.si)) continue;          // 시가 쿼리에 있어야 우선 진입
+    if (!termPresent(q, siData.si)) continue;          // 시가 쿼리에 있어야 우선 진입
     for (const guData of siData.gus) {
-      if (q.includes(guData.gu)) {
+      if (termPresent(q, guData.gu)) {
         return {
           si: siData.si,
           gu: guData.gu,
@@ -67,7 +84,7 @@ export function parseLocationFromQuery(query: string): ParsedLocation | null {
   // 3) 구만 매칭 (시 없이) — 첫 번째 발견 도시로
   for (const siData of KOREA_LOCATIONS) {
     for (const guData of siData.gus) {
-      if (q.includes(guData.gu)) {
+      if (termPresent(q, guData.gu)) {
         return {
           si: siData.si,
           gu: guData.gu,
@@ -82,7 +99,7 @@ export function parseLocationFromQuery(query: string): ParsedLocation | null {
 
   // 4) 시만 매칭
   for (const siData of KOREA_LOCATIONS) {
-    if (q.includes(siData.si)) {
+    if (termPresent(q, siData.si)) {
       return {
         si: siData.si,
         gu: "",
