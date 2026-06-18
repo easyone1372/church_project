@@ -100,18 +100,22 @@ for (const si2 of sortedSi2) {
     for (const [key, names] of dongMap) {
       if (key.startsWith(si2)) names.forEach((n) => allDongs.add(n.slice(doFullName.length + 1)));
     }
-    gus.push({ gu: doFullName, dongs: [...allDongs] });
+    gus.push({ gu: doFullName, dongs: [...allDongs].sort((a, b) => a.localeCompare(b, "ko")) });
   } else {
     for (const row of surviving) {
       const guLabel = row.fullName.slice(doFullName.length + 1);
       const dongRows = dongMap.get(si2 + row.gugun3) ?? [];
-      const dongs = [...new Set(dongRows.map((n) => n.slice(row.fullName.length + 1)))];
+      const dongs = [...new Set(dongRows.map((n) => n.slice(row.fullName.length + 1)))]
+        .sort((a, b) => a.localeCompare(b, "ko"));
       gus.push({ gu: guLabel, dongs });
     }
   }
 
+  gus.sort((a, b) => a.gu.localeCompare(b.gu, "ko"));
   result.push({ si: shortSi, gus });
 }
+
+result.sort((a, b) => a.si.localeCompare(b.si, "ko"));
 
 function esc(s) {
   return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
