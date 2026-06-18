@@ -205,7 +205,10 @@ export default function LocationPicker({ value, onChange }: Props) {
                       }`}
                     >
                       <button
-                        onClick={() => toggleGu(g.gu)}
+                        onClick={() => {
+                          toggleGu(g.gu);
+                          if (g.dongs && g.dongs.length > 0) setFocusedGu(g.gu);
+                        }}
                         className="flex-1 text-left px-3.5 py-3 text-[13px] font-medium text-text-body border-none bg-transparent cursor-pointer hover:bg-surface-card flex items-center gap-2 min-w-0"
                       >
                         <Check checked={isGuChecked(g.gu)} />
